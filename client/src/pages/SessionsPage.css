@@ -1,0 +1,75 @@
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.session-card {
+  padding: var(--space-lg);
+}
+
+.session-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.session-card-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.session-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.session-card-skill {
+  font-size: var(--font-base);
+  font-weight: 600;
+}
+
+.session-card-user {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.session-card-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.session-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-sm);
+}
+
+.session-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+@media (max-width: 640px) {
+  .session-card-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .session-card-right {
+    align-items: stretch;
+  }
+  .session-actions {
+    flex-direction: column;
+  }
+}

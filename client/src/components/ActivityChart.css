@@ -1,0 +1,34 @@
+.activity-chart {
+  padding: var(--space-lg);
+}
+
+.activity-chart-title {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+}
+
+.activity-chart-container {
+  width: 100%;
+}
+
+.chart-tooltip {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+}
+
+.chart-tooltip-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.chart-tooltip-value {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}

@@ -1,0 +1,29 @@
+.review-form {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.review-form-title {
+  font-size: var(--font-base);
+  font-weight: 600;
+}
+
+.review-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.review-star-btn {
+  padding: 2px;
+  display: flex;
+}
+
+.review-rating-text {
+  margin-left: var(--space-sm);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+}

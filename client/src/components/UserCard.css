@@ -1,0 +1,72 @@
+.user-card {
+  padding: var(--space-lg);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.user-card-header {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.user-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card-bio {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.user-card-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.user-card-more {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+
+.user-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-glass);
+}
+
+.user-card-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.user-card-stat .star-filled {
+  color: #FFD700;
+  fill: #FFD700;
+}
+
+.user-card-footer .gradient-btn {
+  margin-left: auto;
+}

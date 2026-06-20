@@ -1,0 +1,52 @@
+.explore-search {
+  position: relative;
+  margin-bottom: var(--space-lg);
+}
+
+.explore-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.explore-search-input {
+  padding-left: 48px !important;
+  padding: 14px 16px 14px 48px;
+  font-size: var(--font-base);
+  border-radius: var(--radius-lg);
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-lg);
+}
+
+.explore-skill-card {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-height: 180px;
+}
+
+.explore-skill-category {
+  font-size: var(--font-xs);
+  color: var(--accent-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.explore-skill-name {
+  font-size: var(--font-xl);
+  font-weight: 700;
+}
+
+.explore-skill-teachers {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
