@@ -31,13 +31,12 @@ export async function getAllSkills(req, res) {
  */
 export async function addUserSkill(req, res) {
   try {
-    const { skill_id, type, proficiency, description } = req.body;
+    let { skill_id, skill_name, category, type, proficiency, description } = req.body;
 
-    const { valid, missing } = requireFields(req.body, ['skill_id', 'type']);
-    if (!valid) {
-      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+    if (!type || (!skill_id && !skill_name)) {
+      return res.status(400).json({ error: 'Missing required fields: type, and either skill_id or skill_name.' });
     }
-    if (!isValidUUID(skill_id)) {
+    if (skill_id && !isValidUUID(skill_id)) {
       return res.status(400).json({ error: 'Invalid skill_id.' });
     }
     if (!isValidEnum(type, ['teach', 'learn'])) {
@@ -47,10 +46,22 @@ export async function addUserSkill(req, res) {
       return res.status(400).json({ error: "proficiency must be 'beginner', 'intermediate', or 'expert'." });
     }
 
-    // Verify skill exists
-    const skillCheck = await query('SELECT id FROM skills WHERE id = $1', [skill_id]);
-    if (skillCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Skill not found.' });
+    // Resolve skill_id if only skill_name is provided
+    if (!skill_id && skill_name) {
+      const cat = category || 'Other';
+      const insertSkillRes = await query(
+        `INSERT INTO skills (name, category) VALUES ($1, $2)
+         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id`,
+        [skill_name.trim(), cat]
+      );
+      skill_id = insertSkillRes.rows[0].id;
+    } else {
+      // Verify skill exists
+      const skillCheck = await query('SELECT id FROM skills WHERE id = $1', [skill_id]);
+      if (skillCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Skill not found.' });
+      }
     }
 
     const { rows: [userSkill] } = await query(

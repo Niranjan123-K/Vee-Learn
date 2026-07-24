@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url    VARCHAR(512)  DEFAULT '',
   course_tag    VARCHAR(50)   DEFAULT '',
   credit_balance NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  experience_level VARCHAR(50) DEFAULT '',
+  preferred_language VARCHAR(50) DEFAULT '',
+  location      VARCHAR(150)  DEFAULT '',
+  availability  VARCHAR(100)  DEFAULT '',
+  profile_completed BOOLEAN   DEFAULT false,
   created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
@@ -79,7 +84,31 @@ CREATE TABLE IF NOT EXISTS sessions (
   duration_minutes INTEGER       NOT NULL DEFAULT 60,
   status          session_status NOT NULL DEFAULT 'pending',
   notes           TEXT           DEFAULT '',
+  meeting_link    VARCHAR(512)   DEFAULT NULL,
+  calendar_event_id VARCHAR(255) DEFAULT NULL,
+  meeting_provider VARCHAR(50)   DEFAULT 'google_meet',
+  meeting_status  VARCHAR(50)    DEFAULT 'NOT_CREATED',
+  meeting_created_at TIMESTAMPTZ DEFAULT NULL,
+  teacher_completion_confirmed BOOLEAN DEFAULT false,
+  learner_completion_confirmed BOOLEAN DEFAULT false,
+  teacher_completed_at TIMESTAMPTZ DEFAULT NULL,
+  learner_completed_at TIMESTAMPTZ DEFAULT NULL,
+  credits_transferred BOOLEAN DEFAULT false,
   created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------
+-- Google Integrations
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS google_integrations (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  google_email  VARCHAR(255),
+  refresh_token TEXT,
+  status        VARCHAR(50) DEFAULT 'CONNECTED',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id)
 );
 
 -- -----------------------------------------------

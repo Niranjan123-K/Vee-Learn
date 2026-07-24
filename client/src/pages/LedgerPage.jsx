@@ -1,213 +1,148 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
-import CreditBadge from '../components/CreditBadge';
-import { formatDate, formatCredits } from '../utils/formatters';
+import { ArrowUpRight, ArrowDownLeft, Zap, ArrowRightLeft } from 'lucide-react';
 import api from '../utils/api';
+import useAuthStore from '../stores/authStore';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
 import './LedgerPage.css';
 
-const typeFilters = ['All', 'Earned', 'Spent', 'Bonus'];
-
 export default function LedgerPage() {
+  const user = useAuthStore(state => state.user);
   const [transactions, setTransactions] = useState([]);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [balance, setBalance] = useState(0);
-  const [totalEarned, setTotalEarned] = useState(0);
-  const [totalSpent, setTotalSpent] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all'); // 'all', 'earned', 'spent'
 
   useEffect(() => {
-    const fetchLedger = async () => {
-      setLoading(true);
+    const fetchTransactions = async () => {
       try {
-        const res = await api.get(`/ledger?page=${page}&limit=10`);
-        const data = res.data;
-        setTransactions(data.transactions || data || []);
-        setBalance(data.balance ?? 0);
-        setTotalEarned(data.totalEarned ?? 0);
-        setTotalSpent(data.totalSpent ?? 0);
-        setTotalPages(data.totalPages ?? 1);
-      } catch {
-        setTransactions([]);
+        const res = await api.get('/ledger');
+        setTransactions(res.data.transactions || []);
+      } catch (err) {
+        console.error('Failed to load ledger', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchLedger();
-  }, [page]);
+    fetchTransactions();
+  }, []);
 
-  const filtered = transactions.filter((tx) => {
-    if (activeFilter === 'All') return true;
-    if (activeFilter === 'Earned') return tx.type === 'earn' || tx.amount > 0;
-    if (activeFilter === 'Spent') return tx.type === 'spend' || tx.amount < 0;
-    return tx.type === 'bonus';
+  const totalEarned = transactions
+    .filter(t => t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id))
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalSpent = transactions
+    .filter(t => t.type === 'SPEND' || (t.type === 'TRANSFER' && t.from_user_id === user?.id))
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const filteredTransactions = transactions.filter(t => {
+    if (filter === 'all') return true;
+    const isEarn = t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id);
+    if (filter === 'earned') return isEarn;
+    if (filter === 'spent') return !isEarn;
+    return true;
   });
 
-  const getTypeIcon = (tx) => {
-    if (tx.type === 'bonus' || tx.type === 'signup') return <Gift size={16} />;
-    if (tx.amount > 0) return <ArrowUpRight size={16} />;
-    return <ArrowDownRight size={16} />;
-  };
-
-  const getTypeColor = (tx) => {
-    if (tx.type === 'bonus' || tx.type === 'signup') return 'var(--accent-primary)';
-    if (tx.amount > 0) return 'var(--success)';
-    return 'var(--danger)';
-  };
-
   return (
-    <div className="page-container">
-      <motion.div
-        className="page-header"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="section-title">
-          Credit <span className="gradient-text">Ledger</span>
-        </h1>
-        <p className="section-subtitle">Track your credit earnings and spending</p>
-      </motion.div>
+    <div className="page-container fade-in">
+      <PageHeader 
+        breadcrumb={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Ledger' }]}
+        title="Credit Ledger"
+        description="Track your time credits earned from teaching and spent on learning."
+      />
 
-      {/* Balance Header */}
-      <motion.div
-        className="ledger-balance glass-card-static"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <div className="ledger-balance-main">
-          <span className="ledger-balance-label">Current Balance</span>
-          <CreditBadge amount={balance} size="lg" />
-        </div>
-        <div className="ledger-balance-stats">
-          <div className="ledger-stat">
-            <TrendingUp size={18} style={{ color: 'var(--success)' }} />
-            <div>
-              <span className="ledger-stat-value" style={{ color: 'var(--success)' }}>
-                +{formatCredits(totalEarned)}
-              </span>
-              <span className="ledger-stat-label">Total Earned</span>
-            </div>
-          </div>
-          <div className="ledger-stat">
-            <TrendingDown size={18} style={{ color: 'var(--danger)' }} />
-            <div>
-              <span className="ledger-stat-value" style={{ color: 'var(--danger)' }}>
-                -{formatCredits(totalSpent)}
-              </span>
-              <span className="ledger-stat-label">Total Spent</span>
-            </div>
-          </div>
-          <div className="ledger-stat">
-            <Wallet size={18} style={{ color: 'var(--accent-secondary)' }} />
-            <div>
-              <span className="ledger-stat-value">{formatCredits(balance)}</span>
-              <span className="ledger-stat-label">Net Balance</span>
-            </div>
+      {/* Summary Cards */}
+      <div className="ledger-summary">
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper text-warning"><Zap size={24} /></div>
+          <div className="stat-content">
+            <span className="stat-label">Current Balance</span>
+            <span className="stat-value">{user?.credit_balance || 0}</span>
           </div>
         </div>
-      </motion.div>
-
-      {/* Filter */}
-      <div className="filter-pills" style={{ marginBottom: 'var(--space-lg)' }}>
-        {typeFilters.map((f) => (
-          <button
-            key={f}
-            className={`filter-pill ${activeFilter === f ? 'active' : ''}`}
-            onClick={() => setActiveFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
+        
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper text-success"><ArrowUpRight size={24} /></div>
+          <div className="stat-content">
+            <span className="stat-label">Total Earned</span>
+            <span className="stat-value">{totalEarned}</span>
+          </div>
+        </div>
+        
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper text-info"><ArrowDownLeft size={24} /></div>
+          <div className="stat-content">
+            <span className="stat-label">Total Spent</span>
+            <span className="stat-value">{totalSpent}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Transaction Table */}
-      <motion.div
-        className="ledger-table glass-card-static"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        {loading ? (
-          <div style={{ padding: 'var(--space-xl)', display: 'flex', justifyContent: 'center' }}>
-            <div className="spinner" />
+      <div className="card mt-xl">
+        <div className="card-header">
+          <h3 className="card-header-title">Transaction History</h3>
+          <div className="tabs" style={{borderBottom: 'none'}}>
+            <button className={`tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
+            <button className={`tab ${filter === 'earned' ? 'active' : ''}`} onClick={() => setFilter('earned')}>Earned</button>
+            <button className={`tab ${filter === 'spent' ? 'active' : ''}`} onClick={() => setFilter('spent')}>Spent</button>
           </div>
-        ) : filtered.length > 0 ? (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th style={{ textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((tx, i) => (
-                  <motion.tr
-                    key={tx._id || i}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                  >
-                    <td>{formatDate(tx.createdAt)}</td>
-                    <td>
-                      <span
-                        className="ledger-type-badge"
-                        style={{ color: getTypeColor(tx) }}
-                      >
-                        {getTypeIcon(tx)}
-                        {tx.type || (tx.amount > 0 ? 'earn' : 'spend')}
-                      </span>
-                    </td>
-                    <td>{tx.description || '—'}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span
-                        className="ledger-amount"
-                        style={{ color: getTypeColor(tx) }}
-                      >
-                        {tx.amount > 0 ? '+' : ''}{formatCredits(tx.amount)}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <Wallet size={48} />
-            <h3>No transactions</h3>
-            <p>Your credit history will appear here</p>
-          </div>
-        )}
-      </motion.div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            <ChevronLeft size={16} />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).slice(
-            Math.max(0, page - 3),
-            Math.min(totalPages, page + 2)
-          ).map((p) => (
-            <button
-              key={p}
-              className={p === page ? 'active' : ''}
-              onClick={() => setPage(p)}
-            >
-              {p}
-            </button>
-          ))}
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-            <ChevronRight size={16} />
-          </button>
         </div>
-      )}
+        
+        <div className="card-body" style={{padding: 0}}>
+          {loading ? (
+            <div className="p-lg">
+              <div className="skeleton" style={{ height: '60px', marginBottom: '10px' }} />
+              <div className="skeleton" style={{ height: '60px', marginBottom: '10px' }} />
+            </div>
+          ) : filteredTransactions.length > 0 ? (
+            <div className="transaction-list">
+              {filteredTransactions.map(t => {
+                const isEarn = t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id);
+                
+                return (
+                  <div key={t.id} className="transaction-item">
+                    <div className="transaction-icon">
+                      {t.type === 'TRANSFER' ? (
+                        <div className={`icon-circle ${isEarn ? 'bg-success-muted text-success' : 'bg-info-muted text-info'}`}>
+                           {isEarn ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
+                        </div>
+                      ) : (
+                        <div className="icon-circle bg-warning-muted text-warning">
+                          <Zap size={18} />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="transaction-content">
+                      <h4 className="transaction-title">
+                        {t.type === 'INITIAL' ? 'Initial Grant' : 
+                         t.type === 'TRANSFER' ? (isEarn ? 'Received for Session' : 'Paid for Session') : 
+                         t.type}
+                      </h4>
+                      <p className="transaction-desc">{t.description}</p>
+                    </div>
+                    
+                    <div className="transaction-meta">
+                      <span className={`transaction-amount ${isEarn ? 'text-success' : 'text-info'}`}>
+                        {isEarn ? '+' : '-'}{t.amount} {Math.abs(t.amount) === 1 ? 'Credit' : 'Credits'}
+                      </span>
+                      <span className="transaction-date">
+                        {new Date(t.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState 
+              icon={ArrowRightLeft}
+              title="No transactions found"
+              description="You haven't earned or spent any credits yet."
+              action={{ label: 'Earn Credits', to: '/explore' }}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,44 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { 
+  Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock, 
+  Check, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
+  CheckCircle, Zap, MessageSquare
+} from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import useChatStore from '../stores/chatStore';
 import api from '../utils/api';
 import TypingIndicator from '../components/TypingIndicator';
-import './SessionChatPage.css'; // Optional CSS if we need specific styles
+import ReviewModal from '../components/ReviewModal';
+import { getInitials, formatRelativeTime } from '../utils/formatters';
+import './SessionChatPage.css';
 
-const ChatMessage = React.memo(({ msg, isMe }) => {
+const ChatMessage = React.memo(({ msg, isMe, showDate, isGrouped }) => {
   const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: isMe ? 'flex-end' : 'flex-start'
-    }}>
-      <div style={{
-        maxWidth: '75%',
-        padding: '12px 16px',
-        borderRadius: '12px',
-        backgroundColor: isMe ? 'var(--text-primary)' : 'var(--bg-secondary)',
-        color: isMe ? 'var(--bg-primary)' : 'var(--text-primary)',
-        border: isMe ? 'none' : '1px solid var(--border-subtle)',
-        fontWeight: '500',
-        fontSize: '0.95rem',
-        lineHeight: '1.4'
-      }}>
-        {msg.text}
+    <>
+      {showDate && (
+        <div className="date-separator">
+          {new Date(msg.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+        </div>
+      )}
+      <div className={`chat-message-wrapper ${isMe ? 'is-me' : 'is-other'} ${!isGrouped ? 'margin-top' : ''}`}>
+        <div className="chat-bubble">
+          {msg.text}
+          <div className="chat-bubble-meta">
+            <span>{timeStr}</span>
+            {isMe && <Check size={12} />}
+          </div>
+        </div>
       </div>
-      <span style={{
-        fontSize: '0.75rem',
-        color: 'var(--text-muted)',
-        marginTop: '4px',
-        marginRight: isMe ? '4px' : '0',
-        marginLeft: isMe ? '0' : '4px'
-      }}>
-        {timeStr}
-      </span>
-    </div>
+    </>
   );
 });
 
@@ -50,24 +44,46 @@ export default function SessionChatPage() {
 
   const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [allSessions, setAllSessions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [partnerIsTyping, setPartnerIsTyping] = useState(false);
+  
+  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
+  const [showRightDrawer, setShowRightDrawer] = useState(false);
+  
   const typingTimeoutRef = useRef(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const messagesEndRef = useRef(null);
 
-  // 1. Fetch Session Info & Chat History
   useEffect(() => {
-    const fetchSessionData = async () => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const [sessionRes, messagesRes] = await Promise.all([
+        setLoading(true);
+        const [sessionRes, messagesRes, allSessionsRes] = await Promise.all([
           api.get(`/sessions/${sessionId}`),
           api.get(`/sessions/${sessionId}/messages`),
+          api.get('/sessions')
         ]);
         setSession(sessionRes.data.session);
         setMessages(messagesRes.data.messages || []);
+        
+        const filtered = (allSessionsRes.data.sessions || []).filter(s => 
+          ['confirmed', 'completed'].includes(s.status)
+        ).sort((a,b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
+        
+        setAllSessions(filtered);
       } catch (err) {
         console.error('Failed to load session chat:', err);
         setError('Failed to load session chat.');
@@ -75,17 +91,14 @@ export default function SessionChatPage() {
         setLoading(false);
       }
     };
-    fetchSessionData();
+    fetchData();
   }, [sessionId]);
 
-  // 2. Setup Socket Room and Listeners
   useEffect(() => {
     if (!socket || !sessionId) return;
 
-    // Join the session room
     socket.emit('join_session', { sessionId });
 
-    // Listen for new messages
     const handleNewMessage = (messageData) => {
       setMessages((prev) => [...prev, messageData]);
       if (messageData.senderId !== user?.id) {
@@ -111,20 +124,17 @@ export default function SessionChatPage() {
       socket.off('new_session_message', handleNewMessage);
       socket.off('typing_session', handleTyping);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      // We don't necessarily leave the room here, but we could emit 'leave_session' if needed.
     };
   }, [socket, sessionId, user?.id]);
 
-  // 3. Auto-scroll Logic
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, partnerIsTyping]);
 
-  // 4. Send Handler
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputText.trim() || !socket) return;
@@ -132,160 +142,382 @@ export default function SessionChatPage() {
     socket.emit('send_session_message', { sessionId, text: inputText }, (response) => {
       if (response?.error) {
         console.error('Failed to send message:', response.error);
-        // Optionally show toast error
       }
     });
 
     setInputText('');
   };
 
+  const handleCompleteSession = async () => {
+    setIsCompleting(true);
+    try {
+      const res = await api.put(`/sessions/${sessionId}/complete`);
+      setSession(res.data.session);
+      if (res.data.session.status === 'completed') {
+        setShowReviewModal(true);
+      }
+    } catch (err) {
+      console.error('Failed to complete session:', err);
+      alert(err.response?.data?.error || 'Failed to complete session.');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const renderCountdown = () => {
+    if (!session) return null;
+    if (session.status === 'completed') return <span className="text-success">Completed</span>;
+    
+    const scheduledAt = new Date(session.scheduled_at);
+    const diffMs = scheduledAt - currentTime;
+    
+    if (diffMs <= 0) return <span className="text-success">In Progress</span>;
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `in ${days} day${days > 1 ? 's' : ''}`;
+    }
+    
+    if (hours > 0) return `in ${hours}h ${mins}m`;
+    return `in ${mins}m`;
+  };
+
+  const filteredSessions = allSessions.filter(s => {
+    const isTeacher = s.teacher_id === user?.id;
+    const partnerName = isTeacher ? s.learner_name : s.teacher_name;
+    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   if (loading) {
     return (
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div className="skeleton" style={{ height: '60px', width: '100%', borderRadius: '12px' }} />
-        <div className="skeleton" style={{ height: '80px', width: '70%', borderRadius: '12px', alignSelf: 'flex-start' }} />
-        <div className="skeleton" style={{ height: '60px', width: '60%', borderRadius: '12px', alignSelf: 'flex-end' }} />
-        <div className="skeleton" style={{ height: '100px', width: '80%', borderRadius: '12px', alignSelf: 'flex-start' }} />
+      <div className="chat-workspace">
+        <div className="chat-center">
+          <div className="loading-screen" style={{minHeight: '100%', background: 'transparent'}}>
+            <div className="skeleton" style={{width: '100%', height: '100%'}} />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !session) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--danger)' }}>
-        <AlertCircle size={24} style={{ marginBottom: '8px' }} />
-        <p>{error || 'Session not found'}</p>
-        <button className="btn-secondary mt-3" onClick={() => navigate('/sessions')}>Go Back</button>
+      <div className="chat-workspace">
+        <div className="chat-center" style={{alignItems: 'center', justifyContent: 'center'}}>
+          <AlertCircle size={48} className="text-danger" style={{ marginBottom: '16px' }} />
+          <h3>{error || 'Session not found'}</h3>
+          <button className="btn-secondary mt-3" onClick={() => navigate('/sessions')}>Go to Sessions</button>
+        </div>
       </div>
     );
   }
 
   const isTeacher = session.teacher_id === user?.id;
-  const otherUser = {
+  const partner = {
     name: isTeacher ? session.learner_name : session.teacher_name,
     avatar: isTeacher ? session.learner_avatar : session.teacher_avatar,
+    role: isTeacher ? 'Learner' : 'Teacher'
+  };
+  
+  const isMeetingReady = () => {
+    const scheduledAt = new Date(session.scheduled_at);
+    const tenMinsBefore = new Date(scheduledAt.getTime() - 10 * 60000);
+    return currentTime >= tenMinsBefore;
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      maxWidth: '800px',
-      margin: '0 auto',
-      backgroundColor: 'var(--bg-primary)',
-      borderLeft: '1px solid var(--border-subtle)',
-      borderRight: '1px solid var(--border-subtle)'
-    }}>
+    <div className="chat-workspace">
       
-      {/* HEADER */}
-      <header style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 'var(--space-md) var(--space-lg)',
-        borderBottom: '1px solid var(--border-subtle)',
-        backgroundColor: 'var(--bg-primary)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-          <button className="navbar-icon-btn" style={{ padding: '8px', border: 'none' }} onClick={() => navigate('/sessions')}>
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              {otherUser.name} <ShieldCheck size={18} color="var(--success, #22c55e)" />
-            </h2>
-            <p className="text-muted" style={{ fontSize: '0.85rem', fontFamily: 'monospace', margin: 0 }}>
-              {session.skill_name || 'Session'} • {session.duration_minutes || 60} min
-            </p>
-          </div>
+      {/* 1. LEFT PANEL: Conversations */}
+      <aside className={`chat-left-sidebar ${showLeftDrawer ? 'show' : ''}`}>
+        <div className="chat-sidebar-header">
+          <h3>Conversations</h3>
+          <button className="btn-icon show-on-mobile" onClick={() => setShowLeftDrawer(false)}><X size={18} /></button>
         </div>
-        <button className="navbar-icon-btn" style={{ padding: '8px', border: 'none' }}>
-          <MoreVertical size={20} />
-        </button>
-      </header>
-
-      {/* MESSAGES AREA */}
-      <main style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: 'var(--space-lg)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-md)'
-      }}>
         
-        {/* Security / Info Banner */}
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-md)' }}>
-          <span style={{
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            backgroundColor: 'var(--bg-secondary)',
-            padding: '4px 12px',
-            borderRadius: '99px',
-            color: 'var(--text-secondary)'
-          }}>
-            End-to-End Encrypted Session
-          </span>
+        <div className="chat-sidebar-search">
+          <div className="search-input-wrapper">
+            <Search size={14} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Find a chat..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="chat-search-input"
+            />
+          </div>
         </div>
 
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} msg={msg} isMe={msg.senderId === user?.id} />
-        ))}
-        {partnerIsTyping && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <TypingIndicator />
+        <div className="chat-sidebar-list">
+          {filteredSessions.map((s, idx) => {
+            const sIsTeacher = s.teacher_id === user?.id;
+            const sPartnerName = sIsTeacher ? s.learner_name : s.teacher_name;
+            const sPartnerAvatar = sIsTeacher ? s.learner_avatar : s.teacher_avatar;
+            const isActive = s.id === sessionId;
+            
+            return (
+              <Link 
+                key={s.id} 
+                to={`/sessions/${s.id}/chat`} 
+                className={`chat-list-item ${isActive ? 'active' : ''}`}
+                style={{ animation: `message-fade-in 0.3s ease ${idx * 0.05}s forwards`, opacity: 0 }}
+                onClick={() => setShowLeftDrawer(false)}
+              >
+                <div className="chat-list-avatar">
+                   {sPartnerAvatar ? <img src={`http://localhost:5000${sPartnerAvatar}`} alt={sPartnerName} className="avatar" /> : <div className="avatar-fallback">{getInitials(sPartnerName)}</div>}
+                   {s.status === 'confirmed' && <span className="online-indicator" />}
+                </div>
+                <div className="chat-list-content">
+                  <div className="chat-list-top">
+                    <span className="chat-list-name truncate">{sPartnerName}</span>
+                    <span className="chat-list-time">12m</span>
+                  </div>
+                  <div className="chat-list-preview">
+                    <span className="chat-list-msg">Click to view session...</span>
+                    {isActive && <span className="unread-badge">1</span>}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* 2. CENTER PANEL: Chat Canvas */}
+      <main className="chat-center">
+        {/* Rich Session Banner */}
+        <header className="chat-header">
+          <div className="chat-header-left">
+            <button className="btn-icon show-on-mobile" onClick={() => setShowLeftDrawer(true)}>
+              <Menu size={18} />
+            </button>
+            <button className="btn-icon hide-on-mobile" onClick={() => navigate('/sessions')}>
+              <ArrowLeft size={18} />
+            </button>
+            
+            {partner.avatar ? <img src={`http://localhost:5000${partner.avatar}`} alt={partner.name} className="header-avatar" /> : <div className="avatar-fallback header-avatar">{getInitials(partner.name)}</div>}
+            
+            <div className="session-hub-info">
+              <h2 className="session-hub-title">
+                {partner.name}
+                <span className="header-role-badge">{partner.role}</span>
+                <span className="chat-list-skill">{session.skill_name}</span>
+              </h2>
+              <div className="session-hub-meta">
+                <span className={`countdown-highlight ${session.status === 'completed' ? 'text-success' : ''}`}>
+                  {renderCountdown()}
+                </span>
+                <span>•</span>
+                <span>{session.status.toUpperCase()}</span>
+              </div>
+            </div>
           </div>
-        )}
-        {/* Invisible div to snap scroll to */}
-        <div ref={messagesEndRef} />
+          
+          <div className="chat-header-right">
+            <button className="btn-icon hide-on-desktop" onClick={() => setShowRightDrawer(true)}>
+              <MoreVertical size={18} />
+            </button>
+          </div>
+        </header>
+
+        {/* Message Canvas */}
+        <div className="chat-messages-area">
+          {messages.length === 0 ? (
+            <div className="chat-empty-state">
+              <div className="chat-empty-state-icon">
+                <MessageSquare size={32} />
+              </div>
+              <h3>Start the conversation</h3>
+              <p>Your collaborative workspace is ready.</p>
+            </div>
+          ) : (
+            messages.map((msg, index) => {
+              const prevMsg = messages[index - 1];
+              
+              // Logic for date separation
+              const currentDate = new Date(msg.timestamp).toLocaleDateString();
+              const prevDate = prevMsg ? new Date(prevMsg.timestamp).toLocaleDateString() : null;
+              const showDate = currentDate !== prevDate;
+              
+              // WhatsApp style grouping
+              const isGrouped = !showDate && prevMsg && prevMsg.senderId === msg.senderId && (new Date(msg.timestamp) - new Date(prevMsg.timestamp)) < 60000;
+              
+              return (
+                <ChatMessage 
+                  key={msg.id} 
+                  msg={msg} 
+                  isMe={msg.senderId === user?.id} 
+                  showDate={showDate}
+                  isGrouped={isGrouped}
+                />
+              );
+            })
+          )}
+          {partnerIsTyping && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '10px 0' }}>
+              <TypingIndicator />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Floating Composer */}
+        <footer className="chat-input-area">
+          <form onSubmit={handleSend} className="chat-input-form">
+            <div className="composer-actions-left">
+              <div className="composer-icon-btn"><Paperclip size={18} /></div>
+            </div>
+            
+            <input
+              type="text"
+              className="chat-input-field"
+              placeholder="Message..."
+              value={inputText}
+              onChange={(e) => {
+                setInputText(e.target.value);
+                socket.volatile.emit('typing_session', { sessionId });
+              }}
+              disabled={session.status !== 'confirmed'}
+            />
+            
+            <div className="composer-actions-right">
+              <div className="composer-icon-btn"><Smile size={18} /></div>
+              <div className="composer-icon-btn"><Mic size={18} /></div>
+              <button 
+                type="submit" 
+                className="send-btn"
+                disabled={!inputText.trim() || session.status !== 'confirmed'}
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          </form>
+          {session.status === 'completed' && (
+            <p className="chat-disabled-msg">Session completed. Workspace is read-only.</p>
+          )}
+        </footer>
       </main>
 
-      {/* INPUT AREA */}
-      <footer style={{
-        padding: 'var(--space-md) var(--space-lg)',
-        borderTop: '1px solid var(--border-subtle)',
-        backgroundColor: 'var(--bg-primary)'
-      }}>
-        <form 
-          onSubmit={handleSend}
-          style={{
-            display: 'flex',
-            gap: 'var(--space-sm)'
-          }}
-        >
-          <input
-            type="text"
-            className="input-minimal"
-            placeholder="Type your message..."
-            value={inputText}
-            onChange={(e) => {
-              setInputText(e.target.value);
-              socket.volatile.emit('typing_session', { sessionId });
-            }}
-            style={{ 
-              flex: 1,
-              borderRadius: '99px', 
-              padding: '12px 20px',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              outline: 'none'
-            }}
-          />
-          <button 
-            type="submit" 
-            className="gradient-btn"
-            style={{ borderRadius: '99px', padding: '0 20px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            disabled={!inputText.trim()}
-          >
-            <Send size={18} />
-          </button>
-        </form>
-      </footer>
+      {/* 3. RIGHT PANEL: Workspace Details */}
+      <aside className={`chat-right-sidebar ${showRightDrawer ? 'show' : ''}`}>
+        <div className="workspace-header">
+          <h3>Workspace</h3>
+          <button className="btn-icon show-on-mobile" onClick={() => setShowRightDrawer(false)}><X size={18} /></button>
+        </div>
+        
+        <div className="chat-right-content">
+          
+          {/* Meeting Card */}
+          <div className="ws-card">
+            <div className="ws-card-header"><Video size={14} /> Meeting</div>
+            <div className="meeting-countdown-large">{renderCountdown()}</div>
+            {session.status === 'confirmed' && (
+              <>
+                {session.meeting_link ? (
+                  <a 
+                    href={session.meeting_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`btn-primary btn-meeting ${!isMeetingReady() ? 'disabled' : ''}`}
+                    onClick={(e) => { if(!isMeetingReady()) e.preventDefault(); }}
+                  >
+                    Join Video Call
+                  </a>
+                ) : (
+                  <button className="btn-secondary btn-meeting disabled">
+                    <Clock size={16} style={{marginRight: '6px'}}/> Awaiting Link
+                  </button>
+                )}
+              </>
+            )}
+          </div>
 
+          {/* Session Details */}
+          <div className="ws-card">
+            <div className="ws-card-header"><Info size={14} /> Details</div>
+            <div className="ws-detail-row"><span className="ws-detail-label">Skill</span><span className="ws-detail-value">{session.skill_name}</span></div>
+            <div className="ws-detail-row"><span className="ws-detail-label">Duration</span><span className="ws-detail-value">{session.duration_minutes} min</span></div>
+            <div className="ws-detail-row"><span className="ws-detail-label">Scheduled</span><span className="ws-detail-value">{new Date(session.scheduled_at).toLocaleDateString()}</span></div>
+          </div>
+
+          {/* Participants */}
+          <div className="ws-card">
+            <div className="ws-card-header"><BookOpen size={14} /> Participants</div>
+            <div className="participant-row">
+              {partner.avatar ? <img src={`http://localhost:5000${partner.avatar}`} alt={partner.name} className="avatar" /> : <div className="avatar-fallback avatar">{getInitials(partner.name)}</div>}
+              <div className="participant-info">
+                <span className="participant-name">{partner.name}</span>
+                <span className="participant-role">{partner.role}</span>
+              </div>
+            </div>
+            <div className="participant-row">
+              {user?.avatar ? <img src={`http://localhost:5000${user.avatar}`} alt={user.name} className="avatar" /> : <div className="avatar-fallback avatar">{getInitials(user.name)}</div>}
+              <div className="participant-info">
+                <span className="participant-name">{user.name} (You)</span>
+                <span className="participant-role">{isTeacher ? 'Teacher' : 'Learner'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions / Complete */}
+          {session.status === 'confirmed' && (
+            <div className="ws-card" style={{borderColor: 'var(--accent-muted)'}}>
+              <div className="ws-card-header text-accent"><CheckCircle size={14} /> Actions</div>
+              {(() => {
+                const userConfirmed = isTeacher ? session.teacher_completion_confirmed : session.learner_completion_confirmed;
+                const otherUserConfirmed = isTeacher ? session.learner_completion_confirmed : session.teacher_completion_confirmed;
+
+                if (!userConfirmed) {
+                  return (
+                    <button 
+                      className="btn-success btn-meeting" 
+                      onClick={handleCompleteSession}
+                      disabled={isCompleting}
+                    >
+                      {isCompleting ? 'Processing...' : otherUserConfirmed ? 'Confirm Completion' : 'Mark as Completed'}
+                    </button>
+                  );
+                } else {
+                  return (
+                    <div className="ws-placeholder-text">
+                      <p className="text-success mb-xs">You confirmed completion.</p>
+                      <p>Waiting for {partner.name}.</p>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          )}
+
+          {/* AI Assistant Placeholder */}
+          <div className="ws-card ws-placeholder-card">
+            <Zap size={24} className="ws-placeholder-icon" />
+            <div className="ws-placeholder-text">AI Session Summary will be generated after completion.</div>
+          </div>
+          
+          {/* Resources Placeholder */}
+          <div className="ws-card ws-placeholder-card">
+            <File size={24} className="ws-placeholder-icon" />
+            <div className="ws-placeholder-text">Drag and drop files here to share.</div>
+          </div>
+
+        </div>
+      </aside>
+
+      <ReviewModal 
+        isOpen={showReviewModal}
+        session={session}
+        onClose={() => setShowReviewModal(false)}
+        onSuccess={() => {
+          setShowReviewModal(false);
+          navigate('/dashboard');
+        }}
+      />
     </div>
   );
 }

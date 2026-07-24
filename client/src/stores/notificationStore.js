@@ -30,6 +30,14 @@ const useNotificationStore = create((set, get) => ({
     }));
   },
 
+  resolveNotification: (id) => {
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, resolved: true, read: true } : n
+      ),
+    }));
+  },
+
   clearAll: () => set({ notifications: [] }),
 
   get unreadCount() {

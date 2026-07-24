@@ -1,75 +1,72 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, Clock } from 'lucide-react';
-import SkillBadge from './SkillBadge';
-import { getInitials, truncateText } from '../utils/formatters';
-import './UserCard.css';
+import { Star, Shield, ArrowRight } from 'lucide-react';
+import { getInitials } from '../utils/formatters';
 
-export default function UserCard({ user, index = 0 }) {
+export default function UserCard({ user, index }) {
   const navigate = useNavigate();
-
-  if (!user) return null;
-
-  const rating = user.averageRating || user.rating || 0;
-  const sessionCount = user.sessionsCompleted || user.sessionCount || 0;
-  const skills = user.skillsTeaching || user.skills || [];
 
   return (
     <motion.div
-      className="user-card glass-card"
-      initial={{ opacity: 0, y: 20 }}
+      className="user-list-item"
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.08 }}
-      whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.3)' }}
-      onClick={() => navigate(`/profile/${user._id}`)}
+      transition={{ delay: index * 0.05 }}
+      onClick={() => navigate(`/profile/${user._id || user.id}`)}
     >
-      <div className="user-card-header">
+      <div className="user-item-avatar" style={{ position: 'relative' }}>
         {user.avatar ? (
-          <img src={user.avatar} alt={user.name} className="avatar avatar-lg" />
+          <img src={`http://localhost:5000${user.avatar}`} alt={user.name} className="avatar avatar-xl" />
         ) : (
-          <div className="avatar-fallback avatar-lg">{getInitials(user.name)}</div>
+          <div className="avatar-fallback avatar-xl">{getInitials(user.name)}</div>
         )}
-        <div className="user-card-info">
-          <h3 className="user-card-name">{user.name}</h3>
-          {user.bio && (
-            <p className="user-card-bio">{truncateText(user.bio, 60)}</p>
-          )}
-        </div>
+        {user.averageRating && user.averageRating > 4.5 && (
+          <div 
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              background: 'var(--bg-card)', borderRadius: '50%', padding: '2px'
+            }}
+          >
+            <div style={{
+              background: 'var(--warning)', color: '#fff', 
+              width: '16px', height: '16px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Star size={8} fill="currentColor" />
+            </div>
+          </div>
+        )}
       </div>
 
-      {skills.length > 0 && (
-        <div className="user-card-skills">
-          {skills.slice(0, 3).map((skill) => (
-            <SkillBadge
-              key={skill._id || skill.name}
-              name={skill.name || skill}
-              category={skill.category}
-            />
-          ))}
-          {skills.length > 3 && (
-            <span className="user-card-more">+{skills.length - 3}</span>
-          )}
-        </div>
-      )}
+      <div className="user-item-info">
+        <h3 className="user-item-name">{user.name}</h3>
+        <p className="user-item-bio text-muted text-sm truncate">{user.bio || 'Experienced professional ready to share skills.'}</p>
+      </div>
 
-      <div className="user-card-footer">
-        <div className="user-card-stat">
-          <Star size={14} className="star-filled" />
-          <span>{rating > 0 ? rating.toFixed(1) : 'New'}</span>
+      <div className="user-item-skills">
+        {(user.skills_offered || []).slice(0, 3).map((s, idx) => (
+          <span key={idx} className="badge badge-default" style={{ fontSize: '11px', padding: '4px 8px' }}>
+            {s.name}
+          </span>
+        ))}
+        {(user.skills_offered?.length > 3) && (
+          <span className="badge badge-default" style={{ fontSize: '11px', padding: '4px 8px' }}>+{user.skills_offered.length - 3}</span>
+        )}
+      </div>
+
+      <div className="user-item-stats">
+        <div className="stat-pill">
+          <Star size={14} className="text-warning" />
+          <span>{user.averageRating ? Number(user.averageRating).toFixed(1) : 'New'}</span>
         </div>
-        <div className="user-card-stat">
-          <Clock size={14} />
-          <span>{sessionCount} sessions</span>
+        <div className="stat-pill">
+          <Shield size={14} className="text-info" />
+          <span>{user.sessionsCompleted || 0} Sessions</span>
         </div>
-        <button
-          className="gradient-btn btn-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/book/${user._id}`);
-          }}
-        >
-          <span>Book</span>
-        </button>
+      </div>
+      
+      <div className="user-item-action">
+        <ArrowRight size={18} className="text-muted" />
       </div>
     </motion.div>
   );

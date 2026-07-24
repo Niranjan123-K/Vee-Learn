@@ -5,15 +5,12 @@ import './StatsCard.css';
 
 export default function StatsCard({ icon: Icon, label, value, trend, trendValue, index = 0 }) {
   const [displayValue, setDisplayValue] = useState(0);
-  const hasAnimated = useRef(false);
-
   useEffect(() => {
-    if (hasAnimated.current) return;
-    hasAnimated.current = true;
-
     const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
     const duration = 1200;
     const startTime = Date.now();
+
+    let animationFrameId;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
@@ -22,14 +19,20 @@ export default function StatsCard({ icon: Icon, label, value, trend, trendValue,
       setDisplayValue(Math.round(numValue * eased * 10) / 10);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       } else {
         setDisplayValue(numValue);
       }
     };
 
-    const timer = setTimeout(() => requestAnimationFrame(animate), index * 100);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      animationFrameId = requestAnimationFrame(animate);
+    }, index * 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
   }, [value, index]);
 
   return (

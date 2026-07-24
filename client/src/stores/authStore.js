@@ -52,11 +52,11 @@ const useAuthStore = create((set) => ({
 
   updateProfile: async (data) => {
     try {
-      const res = await api.put('/auth/profile', data);
+      const res = await api.put('/users/profile', data);
       set({ user: res.data.user || res.data });
       return { success: true };
     } catch (err) {
-      const message = err.response?.data?.message || 'Update failed.';
+      const message = err.response?.data?.error || err.response?.data?.message || 'Update failed.';
       return { success: false, message };
     }
   },

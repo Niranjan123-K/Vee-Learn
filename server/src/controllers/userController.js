@@ -14,7 +14,7 @@ export async function getProfile(req, res) {
     }
 
     const { rows: [user] } = await query(
-      `SELECT id, name, email, bio, avatar_url, credit_balance, created_at
+      `SELECT id, name, email, bio, avatar_url, wallpaper_url, credit_balance, created_at
        FROM users WHERE id = $1`,
       [id],
     );
@@ -71,38 +71,99 @@ export async function getProfile(req, res) {
  */
 export async function getTeachers(req, res) {
   try {
-    const { skill } = req.query;
+    const { q, category, experience_level, min_rating, availability, language, sort, limit = 50 } = req.query;
     
-    let queryStr = `
-      SELECT DISTINCT
-        u.id AS _id, u.id, u.name, u.avatar_url, u.bio, u.course_tag,
-        COALESCE((SELECT AVG(rating)::NUMERIC(3,2) FROM reviews WHERE reviewee_id = u.id), 0) AS "averageRating",
-        (SELECT COUNT(*)::INT FROM sessions WHERE teacher_id = u.id AND status = 'completed') AS "sessionsCompleted"
-      FROM users u
-    `;
     const params = [];
+    let paramCount = 1;
 
-    if (skill && skill !== 'all') {
-      queryStr += ` JOIN user_skills us ON u.id = us.user_id AND us.type = 'teach' `;
-      if (isValidUUID(skill)) {
-        queryStr += ` WHERE us.skill_id = $1 `;
-        params.push(skill);
-      } else {
-        // If skill is passed as name instead of UUID
-        queryStr += ` JOIN skills s ON s.id = us.skill_id WHERE s.name ILIKE $1 `;
-        params.push(skill);
-      }
-    } else {
-      // For "all", let's just return all users who have at least one skill to teach
-      // OR for testing MVP, let's just return everyone except those with no course_tag
-      // Actually, returning everyone is fine so users can find each other easily right now
+    let queryStr = `
+      SELECT
+        u.id AS _id, u.id, u.name, u.avatar_url, u.bio, u.experience_level, u.credit_balance, u.created_at, u.availability, u.preferred_language,
+        COALESCE((SELECT AVG(rating)::NUMERIC(3,2) FROM reviews WHERE reviewee_id = u.id), 0) AS "averageRating",
+        (SELECT COUNT(*)::INT FROM sessions WHERE teacher_id = u.id AND status = 'completed') AS "sessionsCompleted",
+        (
+          SELECT COALESCE(json_agg(json_build_object('name', sk.name, 'category', sk.category)), '[]'::json)
+          FROM user_skills usk
+          JOIN skills sk ON sk.id = usk.skill_id
+          WHERE usk.user_id = u.id AND usk.type = 'teach'
+        ) AS skills_offered
+      FROM users u
+      WHERE u.profile_completed = true
+    `;
+
+    // Ensure they have at least one teaching skill
+    queryStr += ` AND EXISTS (SELECT 1 FROM user_skills usk WHERE usk.user_id = u.id AND usk.type = 'teach') `;
+
+    // Exclude the current user from the results
+    if (req.user && req.user.id) {
+      queryStr += ` AND u.id != $${paramCount} `;
+      params.push(req.user.id);
+      paramCount++;
     }
 
-    queryStr += ` ORDER BY "averageRating" DESC LIMIT 50`;
+    if (q) {
+      queryStr += ` AND (u.name ILIKE $${paramCount} OR EXISTS (
+        SELECT 1 FROM user_skills usq JOIN skills sq ON sq.id = usq.skill_id 
+        WHERE usq.user_id = u.id AND usq.type = 'teach' AND (sq.name ILIKE $${paramCount} OR sq.category ILIKE $${paramCount})
+      )) `;
+      params.push(`%${q}%`);
+      paramCount++;
+    }
+
+    if (category && category !== 'All') {
+      queryStr += ` AND EXISTS (
+        SELECT 1 FROM user_skills usc JOIN skills sc ON sc.id = usc.skill_id 
+        WHERE usc.user_id = u.id AND usc.type = 'teach' AND sc.category = $${paramCount}
+      ) `;
+      params.push(category);
+      paramCount++;
+    }
+
+    if (experience_level && experience_level !== 'all') {
+      queryStr += ` AND u.experience_level = $${paramCount} `;
+      params.push(experience_level);
+      paramCount++;
+    }
+
+    if (availability && availability !== 'all') {
+      queryStr += ` AND u.availability = $${paramCount} `;
+      params.push(availability);
+      paramCount++;
+    }
+
+    if (language && language !== 'all') {
+      queryStr += ` AND u.preferred_language = $${paramCount} `;
+      params.push(language);
+      paramCount++;
+    }
+
+    // Since we can't reference an alias in WHERE clause easily in Postgres without a subquery,
+    // we use a HAVING or subquery. Let's wrap the main query if we need min_rating.
+    if (min_rating) {
+      queryStr = `SELECT * FROM (${queryStr}) AS t WHERE t."averageRating" >= $${paramCount}`;
+      params.push(parseFloat(min_rating));
+      paramCount++;
+    }
+
+    // Sorting
+    if (sort === 'rating_desc') {
+      queryStr += ` ORDER BY "averageRating" DESC `;
+    } else if (sort === 'sessions_desc') {
+      queryStr += ` ORDER BY "sessionsCompleted" DESC `;
+    } else if (sort === 'newest') {
+      queryStr += ` ORDER BY created_at DESC `;
+    } else if (sort === 'alpha_asc') {
+      queryStr += ` ORDER BY name ASC `;
+    } else {
+      queryStr += ` ORDER BY "averageRating" DESC `; // Default
+    }
+
+    queryStr += ` LIMIT $${paramCount} `;
+    params.push(Math.min(parseInt(limit, 10) || 50, 100));
 
     const { rows } = await query(queryStr, params);
     
-    return res.json({ users: rows, skillName: skill === 'all' ? 'All Skills' : skill });
+    return res.json({ users: rows });
   } catch (err) {
     console.error('[User] getTeachers error:', err.message);
     return res.status(500).json({ error: 'Failed to fetch teachers.' });
@@ -115,22 +176,69 @@ export async function getTeachers(req, res) {
  */
 export async function updateProfile(req, res) {
   try {
-    const { name, bio, avatar_url } = req.body;
+    const { name, bio, avatar_url, experience_level, preferred_language, location, availability } = req.body;
 
     const { rows: [user] } = await query(
       `UPDATE users
-       SET name       = COALESCE($1, name),
-           bio        = COALESCE($2, bio),
-           avatar_url = COALESCE($3, avatar_url)
-       WHERE id = $4
-       RETURNING id, name, email, bio, avatar_url, credit_balance, created_at`,
-      [name || null, bio ?? null, avatar_url ?? null, req.user.id],
+       SET name               = COALESCE($1, name),
+           bio                = COALESCE($2, bio),
+           avatar_url         = COALESCE($3, avatar_url),
+           experience_level   = COALESCE($4, experience_level),
+           preferred_language = COALESCE($5, preferred_language),
+           location           = COALESCE($6, location),
+           availability       = COALESCE($7, availability)
+       WHERE id = $8
+       RETURNING id, name, email, bio, avatar_url, credit_balance, experience_level, preferred_language, location, availability, profile_completed, created_at`,
+      [
+        name || null, 
+        bio ?? null, 
+        avatar_url ?? null, 
+        experience_level ?? null, 
+        preferred_language ?? null, 
+        location ?? null, 
+        availability ?? null, 
+        req.user.id
+      ],
     );
 
     return res.json({ user });
   } catch (err) {
     console.error('[User] updateProfile error:', err.message);
     return res.status(500).json({ error: 'Failed to update profile.' });
+  }
+}
+
+export async function uploadDp(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const { rows: [user] } = await query(
+      `UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING avatar_url`,
+      [avatarUrl, req.user.id]
+    );
+    return res.json({ url: user.avatar_url });
+  } catch (err) {
+    console.error('[User] uploadDp error:', err.message);
+    return res.status(500).json({ error: 'Failed to upload DP.' });
+  }
+}
+
+export async function uploadWallpaper(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const wallpaperUrl = `/uploads/${req.file.filename}`;
+    const { rows: [user] } = await query(
+      `UPDATE users SET wallpaper_url = $1 WHERE id = $2 RETURNING wallpaper_url`,
+      [wallpaperUrl, req.user.id]
+    );
+    return res.json({ url: user.wallpaper_url });
+  } catch (err) {
+    console.error('[User] uploadWallpaper error:', err.message);
+    return res.status(500).json({ error: 'Failed to upload wallpaper.' });
   }
 }
 
@@ -160,5 +268,25 @@ export async function getLeaderboard(req, res) {
   } catch (err) {
     console.error('[User] getLeaderboard error:', err.message);
     return res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+  }
+}
+
+/**
+ * POST /api/users/complete-onboarding
+ * Sets profile_completed to true after the wizard is finished.
+ */
+export async function completeOnboarding(req, res) {
+  try {
+    const { rows: [user] } = await query(
+      `UPDATE users
+       SET profile_completed = true
+       WHERE id = $1
+       RETURNING id, name, email, bio, avatar_url, credit_balance, experience_level, preferred_language, location, availability, profile_completed, created_at`,
+      [req.user.id]
+    );
+    return res.json({ user });
+  } catch (err) {
+    console.error('[User] completeOnboarding error:', err.message);
+    return res.status(500).json({ error: 'Failed to complete onboarding.' });
   }
 }

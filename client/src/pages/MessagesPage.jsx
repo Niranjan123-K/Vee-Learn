@@ -1,124 +1,130 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Send, User, MessageCircle } from 'lucide-react';
-import useChatStore from '../stores/chatStore';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, MessageSquare, ArrowRight } from 'lucide-react';
+import api from '../utils/api';
 import useAuthStore from '../stores/authStore';
-import ChatBubble from '../components/ChatBubble';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import { getInitials } from '../utils/formatters';
 import './MessagesPage.css';
 
-const MessagesPage = () => {
-  const { userId } = useParams();
+export default function MessagesPage() {
   const user = useAuthStore(state => state.user);
-  const { 
-    conversations, 
-    activeConversation, 
-    messages, 
-    loadConversations, 
-    loadMessages, 
-    sendMessage, 
-    setActiveConversation 
-  } = useChatStore();
-
-  const [messageText, setMessageText] = useState('');
-  const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
+  
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    const fetchConversations = async () => {
+      try {
+        const res = await api.get('/sessions');
+        // Only show confirmed or completed sessions that act as chat workspaces
+        const chatSessions = (res.data.sessions || []).filter(s => 
+          ['confirmed', 'completed'].includes(s.status)
+        ).sort((a,b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
+        
+        setSessions(chatSessions);
+      } catch (err) {
+        console.error('Failed to load conversations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConversations();
+  }, []);
 
-  useEffect(() => {
-    if (userId) {
-      setActiveConversation(userId);
-      loadMessages(userId);
-    }
-  }, [userId, setActiveConversation, loadMessages]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (messageText.trim() && userId) {
-      sendMessage(userId, messageText);
-      setMessageText('');
-    }
-  };
+  const filteredSessions = sessions.filter(s => {
+    const isTeacher = s.teacher_id === user?.id;
+    const partnerName = isTeacher ? s.learner_name : s.teacher_name;
+    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
-    <div className="messages-page page-container fade-in">
-      <div className="messages-layout surface-card">
-        {/* Conversations Sidebar */}
-        <div className="conversations-sidebar">
-          <h2 className="sidebar-title">Conversations</h2>
-          <div className="conversations-list">
-            {conversations.map(conv => (
-              <div 
-                key={conv.id} 
-                className={`conversation-item ${activeConversation === conv.user.id ? 'active' : ''}`}
-                onClick={() => window.location.href = `/messages/${conv.user.id}`}
-              >
-                <div className="conv-avatar">
-                  {conv.user.avatar_url ? (
-                    <img src={conv.user.avatar_url} alt={conv.user.name} />
-                  ) : (
-                    <User size={24} />
-                  )}
-                </div>
-                <div className="conv-details">
-                  <div className="conv-header">
-                    <h4>{conv.user.name}</h4>
-                    <span className="conv-time">{new Date(conv.last_message_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {conversations.length === 0 && <p className="no-conversations">No conversations yet.</p>}
+    <div className="page-container fade-in">
+      <PageHeader 
+        breadcrumb={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Messages' }]}
+        title="Messages"
+        description="Your active and past session workspaces."
+      />
+
+      <div className="card">
+        <div className="card-header">
+          <div className="search-input-wrapper w-full" style={{maxWidth: '400px'}}>
+            <Search size={16} className="search-icon" style={{left: '12px'}} />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="Search conversations..." 
+              style={{paddingLeft: '36px'}}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
-
-        {/* Active Chat Area */}
-        <div className="chat-area">
-          {userId ? (
-            <>
-              <div className="chat-header">
-                <h3>Chat</h3>
-              </div>
-              <div className="messages-list">
-                {messages.map(msg => (
-                  <ChatBubble 
-                    key={msg.id} 
-                    message={msg} 
-                    isOwn={msg.sender_id === user?.id} 
-                  />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-              <form className="message-input-area" onSubmit={handleSend}>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="Type a message..." 
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                />
-                <button type="submit" className="btn-primary send-btn" disabled={!messageText.trim()}>
-                  <Send size={20} />
-                </button>
-              </form>
-            </>
-          ) : (
-            <div className="empty-chat-state">
-              <MessageCircle size={64} className="empty-icon" />
-              <h3>Your Messages</h3>
-              <p>Select a conversation to start chatting</p>
+        
+        <div className="card-body" style={{padding: 0}}>
+          {loading ? (
+            <div className="p-lg">
+              <div className="skeleton" style={{ height: '70px', marginBottom: '10px' }} />
+              <div className="skeleton" style={{ height: '70px', marginBottom: '10px' }} />
             </div>
+          ) : filteredSessions.length > 0 ? (
+            <div className="messages-list">
+              {filteredSessions.map(session => {
+                const isTeacher = session.teacher_id === user?.id;
+                const partnerName = isTeacher ? session.learner_name : session.teacher_name;
+                const partnerAvatar = isTeacher ? session.learner_avatar : session.teacher_avatar;
+                
+                return (
+                  <div 
+                    key={session.id} 
+                    className="message-item"
+                    onClick={() => navigate(`/sessions/${session.id}/chat`)}
+                  >
+                    <div className="message-avatar-wrapper">
+                      {partnerAvatar ? (
+                        <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-xl" />
+                      ) : (
+                        <div className="avatar-fallback avatar-xl">{getInitials(partnerName)}</div>
+                      )}
+                      {session.status === 'confirmed' && <span className="status-indicator online" />}
+                    </div>
+                    
+                    <div className="message-content">
+                      <div className="message-header">
+                        <h4 className="message-name">{partnerName}</h4>
+                        <span className="message-time">
+                          {new Date(session.updated_at || session.updatedAt || session.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                        </span>
+                      </div>
+                      <p className="message-skill">{session.skill_name}</p>
+                      <p className="message-preview">
+                        {session.status === 'confirmed' ? 'Active session workspace open.' : 'Session completed. Chat history available.'}
+                      </p>
+                    </div>
+                    
+                    <div className="message-action">
+                      <button className="btn-icon">
+                        <ArrowRight size={20} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState 
+              icon={MessageSquare}
+              title="No conversations found"
+              description="You don't have any active or past session workspaces."
+              action={{ label: 'Find a Teacher', to: '/explore' }}
+            />
           )}
         </div>
       </div>
     </div>
   );
-};
-
-export default MessagesPage;
+}

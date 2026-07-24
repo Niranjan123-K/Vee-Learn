@@ -1,219 +1,347 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, FileText, Coins, AlertCircle } from 'lucide-react';
-import useAuthStore from '../stores/authStore';
-import SkillBadge from '../components/SkillBadge';
-import CreditBadge from '../components/CreditBadge';
-import { getInitials } from '../utils/formatters';
+import { Calendar, Clock, BookOpen, AlertCircle, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import useAuthStore from '../stores/authStore';
+import PageHeader from '../components/PageHeader';
+import { getInitials } from '../utils/formatters';
 import './BookSessionPage.css';
 
 export default function BookSessionPage() {
-  const { teacherId } = useParams();
+  const { teacherId, skillId } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
+
   const [teacher, setTeacher] = useState(null);
-  const [selectedSkill, setSelectedSkill] = useState('');
+  const [skill, setSkill] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const [duration, setDuration] = useState(60);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [step, setStep] = useState(1);
+  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
+    if (user?.id === teacherId) {
+      setError('You cannot book a session with yourself.');
+      setLoading(false);
+      return;
+    }
+
     const fetchTeacher = async () => {
       try {
         const res = await api.get(`/users/${teacherId}`);
-        setTeacher(res.data.user || res.data);
-      } catch {
-        setTeacher(null);
+        const data = res.data.user || res.data;
+        const teachingSkills = (data.skills || []).filter(s => s.type === 'teach');
+        data.teaching_skills = teachingSkills;
+        setTeacher(data);
+        
+        if (skillId && skillId !== 'general') {
+          const matched = teachingSkills.find(s => s.skill_name === skillId);
+          if (matched) {
+            setSkill(matched.skill_id);
+          } else if (teachingSkills.length > 0) {
+            setSkill(teachingSkills[0].skill_id);
+          }
+        } else if (teachingSkills.length > 0) {
+          setSkill(teachingSkills[0].skill_id);
+        }
+      } catch (err) {
+        setError('Teacher not found.');
+      } finally {
+        setLoading(false);
       }
     };
-    if (teacherId) fetchTeacher();
-  }, [teacherId]);
+    fetchTeacher();
+  }, [teacherId, user?.id, skillId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (step < 3) {
+      setStep(step + 1);
+      return;
+    }
+
+    if (!skill || !date || !time) {
+      setError('Please fill in all details.');
+      return;
+    }
+
+    setBooking(true);
     setError('');
-    setLoading(true);
     try {
-      const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
+      const scheduledAt = new Date(`${date}T${time}`).toISOString();
       await api.post('/sessions', {
         teacher_id: teacherId,
-        skill_id: selectedSkill,
-        scheduled_at,
-        duration_minutes: duration,
-        notes,
+        skill_id: skill,
+        scheduled_at: scheduledAt,
+        duration_minutes: 60,
       });
-      navigate('/sessions');
+      setStep(4); // Success step
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to book session');
+      setError(err.response?.data?.error || 'Failed to book session');
+      setBooking(false);
     }
-    setLoading(false);
   };
 
-  const creditCost = 1;
-  const hasEnoughCredits = (user?.credit_balance || 0) >= creditCost;
+  const today = new Date().toISOString().split('T')[0];
 
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-    '18:00', '18:30', '19:00', '19:30', '20:00',
+  if (loading) {
+    return (
+      <div className="page-container">
+         <div className="skeleton" style={{ height: '200px', maxWidth: '600px', margin: '0 auto' }} />
+      </div>
+    );
+  }
+
+  if (error && !teacher) {
+    return (
+      <div className="page-container text-center pt-xl">
+        <h3 className="text-danger">{error}</h3>
+        <button className="btn-secondary mt-md" onClick={() => navigate(-1)}>Go Back</button>
+      </div>
+    );
+  }
+
+  const steps = [
+    { num: 1, label: 'Skill & Date' },
+    { num: 2, label: 'Time' },
+    { num: 3, label: 'Review' },
   ];
 
   return (
-    <div className="page-container">
-      <motion.div
-        className="page-header"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="section-title">
-          Book a <span className="gradient-text">Session</span>
-        </h1>
-        <p className="section-subtitle">Schedule a learning session with your chosen teacher</p>
-      </motion.div>
+    <div className="page-container fade-in">
+      <PageHeader 
+        breadcrumb={[{ label: 'Explore', to: '/explore' }, { label: teacher.name, to: `/profile/${teacherId}` }, { label: 'Book Session' }]}
+        title="Request a Session"
+      />
 
       <div className="book-layout">
-        <motion.form
-          className="book-form surface-card"
-          onSubmit={handleSubmit}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {/* Teacher Info */}
-          {teacher && (
-            <div className="book-teacher-info">
-              {teacher.avatar ? (
-                <img src={teacher.avatar} alt={teacher.name} className="avatar avatar-lg" />
-              ) : (
-                <div className="avatar-fallback avatar-lg">{getInitials(teacher.name)}</div>
-              )}
-              <div>
-                <h3>{teacher.name}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-sm)' }}>
-                  {teacher.bio || 'Experienced teacher'}
-                </p>
-              </div>
+        
+        {/* LEFT: Teacher Summary */}
+        <aside className="book-sidebar hide-on-mobile">
+          <div className="card">
+            <div className="card-body flex-col items-center text-center gap-md">
+               <div className="avatar-wrapper">
+                 {teacher.avatar_url ? <img src={`http://localhost:5000${teacher.avatar_url}`} alt={teacher.name} className="avatar avatar-xl" /> : <div className="avatar-fallback avatar-xl">{getInitials(teacher.name)}</div>}
+               </div>
+               <div>
+                 <h3 className="font-lg text-primary">{teacher.name}</h3>
+                 <p className="text-sm text-secondary mt-xs">{teacher.bio ? (teacher.bio.length > 60 ? teacher.bio.substring(0, 60) + '...' : teacher.bio) : 'Teacher'}</p>
+               </div>
+            </div>
+            <div className="card-footer" style={{justifyContent: 'center', backgroundColor: 'var(--bg-elevated)'}}>
+               <span className="text-xs text-muted">Cost: 1 Credit / hour</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* RIGHT: Booking Flow */}
+        <main className="book-main">
+          
+          {step < 4 && (
+            <div className="book-stepper">
+              {steps.map(s => (
+                <div key={s.num} className={`stepper-step ${step >= s.num ? 'active' : ''}`}>
+                  <div className="step-circle">
+                    {step > s.num ? <CheckCircle size={14} /> : s.num}
+                  </div>
+                  <span className="step-label">{s.label}</span>
+                  {s.num < steps.length && <div className="step-line" />}
+                </div>
+              ))}
             </div>
           )}
 
-          {error && (
-            <div className="auth-error">{error}</div>
-          )}
-
-          {/* Skill selector */}
-          <div className="input-group">
-            <label>Skill</label>
-            <select
-              className="input-field"
-              value={selectedSkill}
-              onChange={(e) => setSelectedSkill(e.target.value)}
-              required
-            >
-              <option value="">Select a skill...</option>
-              {teacher?.skills?.filter(s => s.type === 'teach').map((skill) => (
-                <option key={skill.skill_id || skill.id} value={skill.skill_id || skill.id}>
-                  {skill.skill_name || skill.name}
-                </option>
-              ))}
-              {teacher?.skills?.filter(s => s.type === 'teach').length === 0 && (
-                <option value="" disabled>No skills available</option>
+          <div className="card">
+            <div className="card-body">
+              {error && (
+                <div className="auth-error mb-lg">
+                  <AlertCircle size={16} />
+                  <span>{error}</span>
+                </div>
               )}
-            </select>
-          </div>
 
-          {/* Date picker */}
-          <div className="input-group">
-            <label><Calendar size={14} style={{ marginRight: 6 }} />Date</label>
-            <input
-              type="date"
-              className="input-field"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-              required
-            />
-          </div>
+              <AnimatePresence mode="wait">
+                
+                {/* STEP 1: Skill & Date */}
+                {step === 1 && (
+                  <motion.div
+                    key="step1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex-col gap-lg"
+                  >
+                    <div className="form-group">
+                      <label className="form-label flex items-center gap-xs text-xs font-semibold text-muted uppercase tracking-wider mb-xs">
+                        <BookOpen size={14}/> Select a Skill
+                      </label>
+                      <select 
+                        className="form-select w-full"
+                        value={skill}
+                        onChange={(e) => setSkill(e.target.value)}
+                        required
+                      >
+                        <option value="" disabled>Choose a skill</option>
+                        {teacher.teaching_skills?.map(s => (
+                          <option key={s.skill_id} value={s.skill_id}>{s.skill_name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-          {/* Time slot selector */}
-          <div className="input-group">
-            <label><Clock size={14} style={{ marginRight: 6 }} />Time Slot</label>
-            <div className="time-slots">
-              {timeSlots.map((slot) => (
-                <button
-                  key={slot}
-                  type="button"
-                  className={`time-slot ${time === slot ? 'active' : ''}`}
-                  onClick={() => setTime(slot)}
+                    <div className="form-group">
+                      <label className="form-label flex items-center gap-xs text-xs font-semibold text-muted uppercase tracking-wider mb-xs">
+                        <Calendar size={14}/> Choose Date
+                      </label>
+                      <input 
+                        type="date"
+                        className="form-input w-full"
+                        style={{ colorScheme: 'dark' }}
+                        value={date}
+                        min={today}
+                        onChange={(e) => setDate(e.target.value)}
+                        onClick={(e) => {
+                          try {
+                            e.target.showPicker();
+                          } catch (err) {
+                            // showPicker might not be supported in older browsers, fallback to native behavior
+                          }
+                        }}
+                        required
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STEP 2: Time */}
+                {step === 2 && (
+                  <motion.div
+                    key="step2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex-col gap-lg"
+                  >
+                    <div className="form-group">
+                      <label className="form-label flex items-center gap-xs text-xs font-semibold text-muted uppercase tracking-wider mb-xs">
+                        <Clock size={14}/> Choose Time
+                      </label>
+                      <input 
+                        type="time"
+                        className="form-input w-full"
+                        style={{ colorScheme: 'dark' }}
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        onClick={(e) => {
+                          try {
+                            e.target.showPicker();
+                          } catch (err) {
+                            // showPicker might not be supported in older browsers, fallback to native behavior
+                          }
+                        }}
+                        required
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STEP 3: Review */}
+                {step === 3 && (
+                  <motion.div
+                    key="step3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex-col gap-lg"
+                  >
+                    <div className="review-box">
+                      <div className="review-row">
+                        <span className="text-secondary text-sm">Teacher</span>
+                        <span className="text-primary font-md">{teacher.name}</span>
+                      </div>
+                      <div className="divider-sm" style={{margin: '8px 0'}} />
+                      <div className="review-row">
+                        <span className="text-secondary text-sm">Skill</span>
+                        <span className="text-primary font-md">
+                          {teacher.teaching_skills?.find(s => s.skill_id === skill)?.skill_name || 'Selected Skill'}
+                        </span>
+                      </div>
+                      <div className="divider-sm" style={{margin: '8px 0'}} />
+                      <div className="review-row">
+                        <span className="text-secondary text-sm">Schedule</span>
+                        <span className="text-primary font-md">
+                          {date ? new Date(date).toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'}) : ''} at {time}
+                        </span>
+                      </div>
+                      <div className="divider-sm" style={{margin: '8px 0'}} />
+                      <div className="review-row">
+                        <span className="text-secondary text-sm">Cost</span>
+                        <span className="text-warning font-md font-semibold">1 Credit</span>
+                      </div>
+                    </div>
+                    <div className="info-alert bg-info-muted text-info">
+                      <AlertCircle size={16} />
+                      <span className="text-xs">Your credit will be held in escrow until the session is completed.</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STEP 4: Success */}
+                {step === 4 && (
+                  <motion.div
+                    key="step4"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex-col items-center text-center gap-md py-xl"
+                  >
+                    <CheckCircle size={64} className="text-success" />
+                    <h2 className="font-2xl mt-sm">Session Requested!</h2>
+                    <p className="text-secondary mb-lg">
+                      Your request has been sent to {teacher.name}. You will be notified once they confirm.
+                    </p>
+                    <div className="flex gap-md w-full">
+                      <button className="btn-secondary w-full" onClick={() => navigate('/dashboard')}>
+                        Return Home
+                      </button>
+                      <button className="btn-primary w-full" onClick={() => navigate('/sessions')}>
+                        View My Sessions
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </div>
+
+            {/* Footer Navigation */}
+            {step < 4 && (
+              <div className="card-footer">
+                {step > 1 ? (
+                  <button type="button" className="btn-ghost" onClick={() => setStep(step - 1)}>
+                    <ArrowLeft size={16} /> Back
+                  </button>
+                ) : <div />}
+                
+                <button 
+                  type="button" 
+                  className="btn-primary"
+                  onClick={handleSubmit}
+                  disabled={
+                    (step === 1 && (!skill || !date)) || 
+                    (step === 2 && !time) ||
+                    booking
+                  }
                 >
-                  {slot}
+                  {booking ? 'Booking...' : (step === 3 ? 'Confirm Request' : 'Continue')} 
+                  {step < 3 && !booking && <ArrowRight size={16} />}
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
+            
           </div>
-
-          {/* Duration */}
-          <div className="input-group">
-            <label>Duration (minutes)</label>
-            <select
-              className="input-field"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-            >
-              <option value={30}>30 minutes</option>
-              <option value={60}>60 minutes</option>
-              <option value={90}>90 minutes</option>
-            </select>
-          </div>
-
-          {/* Notes */}
-          <div className="input-group">
-            <label><FileText size={14} style={{ marginRight: 6 }} />Notes (optional)</label>
-            <textarea
-              className="input-field"
-              placeholder="What do you want to learn? Any specific topics?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {/* Cost summary */}
-          <div className="book-cost-summary surface-card">
-            <div className="book-cost-row">
-              <span>Session Cost</span>
-              <span className="book-cost-value">
-                <Coins size={16} style={{ color: 'var(--accent-secondary)' }} />
-                {creditCost} credit
-              </span>
-            </div>
-            <div className="book-cost-row">
-              <span>Your Balance</span>
-              <CreditBadge amount={user?.credit_balance || 0} size="sm" />
-            </div>
-          </div>
-
-          {!hasEnoughCredits && (
-            <div className="book-warning">
-              <AlertCircle size={16} />
-              Insufficient credits. You need at least {creditCost} credit to book a session. Teach to earn more!
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading || !hasEnoughCredits || !selectedSkill || !date || !time}
-            style={{ width: '100%' }}
-          >
-            <span>{loading ? 'Booking...' : 'Book Session'}</span>
-          </button>
-        </motion.form>
+        </main>
       </div>
     </div>
   );

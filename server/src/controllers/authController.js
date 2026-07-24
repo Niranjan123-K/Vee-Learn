@@ -63,7 +63,7 @@ export async function register(req, res) {
     const { rows: [user] } = await query(
       `INSERT INTO users (name, email, password_hash, course_tag)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, name, email, bio, avatar_url, course_tag, credit_balance, created_at`,
+       RETURNING id, name, email, bio, avatar_url, course_tag, credit_balance, experience_level, preferred_language, location, availability, profile_completed, created_at`,
       [name.trim(), email.toLowerCase().trim(), passwordHash, courseTag],
     );
 
@@ -95,8 +95,11 @@ export async function login(req, res) {
     }
 
     const { rows: [user] } = await query(
-      `SELECT id, name, email, password_hash, bio, avatar_url, course_tag, credit_balance, created_at
-       FROM users WHERE email = $1`,
+      `SELECT u.id, u.name, u.email, u.password_hash, u.bio, u.avatar_url, u.course_tag, u.credit_balance, u.experience_level, u.preferred_language, u.location, u.availability, u.profile_completed, u.created_at,
+              CASE WHEN gi.status = 'CONNECTED' AND gi.refresh_token IS NOT NULL THEN true ELSE false END AS "isGoogleConnected"
+       FROM users u
+       LEFT JOIN google_integrations gi ON u.id = gi.user_id
+       WHERE u.email = $1`,
       [email.toLowerCase().trim()],
     );
 
@@ -127,8 +130,11 @@ export async function login(req, res) {
 export async function getMe(req, res) {
   try {
     const { rows: [user] } = await query(
-      `SELECT id, name, email, bio, avatar_url, course_tag, credit_balance, created_at
-       FROM users WHERE id = $1`,
+      `SELECT u.id, u.name, u.email, u.bio, u.avatar_url, u.course_tag, u.credit_balance, u.experience_level, u.preferred_language, u.location, u.availability, u.profile_completed, u.created_at,
+              CASE WHEN gi.status = 'CONNECTED' AND gi.refresh_token IS NOT NULL THEN true ELSE false END AS "isGoogleConnected"
+       FROM users u
+       LEFT JOIN google_integrations gi ON u.id = gi.user_id
+       WHERE u.id = $1`,
       [req.user.id],
     );
 

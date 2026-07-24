@@ -1,12 +1,45 @@
+/* ==========================================================================
+   APP SHELL LAYOUT
+   Two-column: Sidebar (fixed) + Main (topbar + scrollable content)
+   ========================================================================== */
+
 .layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* ---------- Main Area ---------- */
+.layout-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: var(--bg-primary);
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-slow);
+}
+
+.sidebar-collapsed .layout-main {
+  margin-left: var(--sidebar-collapsed-width);
 }
 
 .layout-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  margin-top: var(--topbar-height);
+  overflow-y: auto;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+  .layout-main {
+    margin-left: 0;
+  }
+
+  .sidebar-collapsed .layout-main {
+    margin-left: 0;
+  }
+
+  .layout-content {
+    padding-bottom: var(--mobile-tab-height);
+  }
 }

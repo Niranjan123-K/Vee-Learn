@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import './AuthPages.css';
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
         <div className="auth-header">
           <div className="auth-logo">
             <div className="sidebar-logo-icon" style={{ width: 40, height: 40 }}>
-              <Sparkles size={20} />
+              {/* Logo removed */}
             </div>
           </div>
           <h1 className="auth-title">Welcome Back</h1>

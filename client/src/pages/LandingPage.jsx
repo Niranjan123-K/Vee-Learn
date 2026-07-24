@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
-  Sparkles, ArrowRight, Share2, Clock, BookOpen,
+  ArrowRight, Share2, Clock, BookOpen,
   Code, Globe, Music, Palette, Briefcase, Dumbbell,
   ChefHat, Star, Users, Zap, Award
 } from 'lucide-react';
@@ -14,12 +14,7 @@ const steps = [
   { icon: BookOpen, title: 'Learn Anything', desc: 'Spend your credits to learn from talented people in the community.' },
 ];
 
-const stats = [
-  { value: '12K+', label: 'Active Users' },
-  { value: '340+', label: 'Skills Available' },
-  { value: '28K+', label: 'Sessions Completed' },
-  { value: '95K+', label: 'Credits Traded' },
-];
+
 
 const categories = [
   { icon: Code, name: 'Programming', count: 85 },
@@ -32,26 +27,7 @@ const categories = [
   { icon: Zap, name: 'Technology', count: 46 },
 ];
 
-const testimonials = [
-  {
-    name: 'Sarah Chen',
-    role: 'UX Designer',
-    text: 'I taught Figma basics and learned conversational Japanese. Vee Learn made the exchange feel natural and fair.',
-    rating: 5,
-  },
-  {
-    name: 'Marcus Johnson',
-    role: 'Guitar Teacher',
-    text: 'Trading guitar lessons for Python tutorials? Best deal ever! The community here is incredibly supportive.',
-    rating: 5,
-  },
-  {
-    name: 'Priya Sharma',
-    role: 'Marketing Analyst',
-    text: 'The time-banking model is genius. I finally learned watercolor painting without spending a dime.',
-    rating: 5,
-  },
-];
+
 
 function AnimatedSection({ children, className }) {
   const ref = useRef(null);
@@ -87,7 +63,7 @@ export default function LandingPage() {
         <div className="landing-header-inner">
           <div className="landing-logo">
             <div className="sidebar-logo-icon" style={{ width: 32, height: 32 }}>
-              <Sparkles size={18} />
+              {/* Logo removed */}
             </div>
             <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Vee Learn</span>
           </div>
@@ -111,7 +87,7 @@ export default function LandingPage() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           <div className="hero-badge badge badge-primary">
-            <Sparkles size={14} /> Time-Banking Skill Exchange
+            Time-Banking Skill Exchange
           </div>
           <h1 className="hero-title">
             Trade <span className="gradient-text">Skills</span>,{' '}
@@ -141,44 +117,44 @@ export default function LandingPage() {
           transition={{ duration: 0.8, delay: 0.3 }}
         >
           <div className="hero-card-stack">
-            <div className="hero-floating-card card-1 glass-card-static">
+            <motion.div 
+              className="hero-floating-card card-1 glass-card-static"
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0 }}
+            >
               <Code size={24} style={{ color: '#60A5FA' }} />
               <span>React.js</span>
-            </div>
-            <div className="hero-floating-card card-2 glass-card-static">
+            </motion.div>
+            <motion.div 
+              className="hero-floating-card card-2 glass-card-static"
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            >
               <Music size={24} style={{ color: '#C084FC' }} />
               <span>Piano</span>
-            </div>
-            <div className="hero-floating-card card-3 glass-card-static">
+            </motion.div>
+            <motion.div 
+              className="hero-floating-card card-3 glass-card-static"
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            >
               <Globe size={24} style={{ color: '#4ADE80' }} />
               <span>Spanish</span>
-            </div>
-            <div className="hero-floating-card card-4 glass-card-static">
+            </motion.div>
+            <motion.div 
+              className="hero-floating-card card-4 glass-card-static"
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            >
               <Palette size={24} style={{ color: '#FB923C' }} />
               <span>Painting</span>
-            </div>
+            </motion.div>
             <div className="hero-center-glow" />
           </div>
         </motion.div>
       </section>
 
-      {/* Stats */}
-      <section className="landing-stats">
-        {stats.map((stat, i) => (
-          <AnimatedSection key={stat.label} className="stat-item">
-            <motion.span
-              className="stat-value gradient-text"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-            >
-              {stat.value}
-            </motion.span>
-            <span className="stat-label">{stat.label}</span>
-          </AnimatedSection>
-        ))}
-      </section>
+
 
       {/* How it Works */}
       <section id="how-it-works" className="landing-section">
@@ -234,44 +210,13 @@ export default function LandingPage() {
                   <Icon size={24} />
                 </div>
                 <h4 className="category-name">{cat.name}</h4>
-                <span className="category-count">{cat.count} teachers</span>
               </motion.div>
             );
           })}
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="landing-section">
-        <AnimatedSection>
-          <h2 className="landing-section-title">
-            Loved by <span className="gradient-text">Learners</span>
-          </h2>
-          <p className="landing-section-desc">See what our community has to say</p>
-        </AnimatedSection>
 
-        <div className="testimonials-grid">
-          {testimonials.map((t, i) => (
-            <AnimatedSection key={t.name} className="testimonial-card glass-card-static">
-              <div className="star-rating" style={{ marginBottom: 12 }}>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={16} className={s <= t.rating ? 'star-filled' : 'star-empty'} />
-                ))}
-              </div>
-              <p className="testimonial-text">"{t.text}"</p>
-              <div className="testimonial-author">
-                <div className="avatar-fallback avatar-md" style={{ fontSize: '0.75rem' }}>
-                  {t.name.split(' ').map((w) => w[0]).join('')}
-                </div>
-                <div>
-                  <h4 className="testimonial-name">{t.name}</h4>
-                  <span className="testimonial-role">{t.role}</span>
-                </div>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </section>
 
       {/* CTA */}
       <AnimatedSection className="landing-cta">
@@ -292,7 +237,7 @@ export default function LandingPage() {
           <div className="footer-brand">
             <div className="landing-logo">
               <div className="sidebar-logo-icon" style={{ width: 28, height: 28 }}>
-                <Sparkles size={14} />
+                {/* Logo removed */}
               </div>
               <span className="gradient-text" style={{ fontSize: '1rem', fontWeight: 700 }}>Vee Learn</span>
             </div>

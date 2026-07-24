@@ -10,6 +10,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
+import path from 'path';
 
 // Database
 import { initializeDatabase } from './config/db.js';
@@ -26,6 +27,7 @@ import sessionRoutes   from './routes/sessions.js';
 import creditRoutes    from './routes/credits.js';
 import reviewRoutes    from './routes/reviews.js';
 import messageRoutes   from './routes/messages.js';
+import googleAuthRoutes from './routes/googleAuth.js';
 import analyticsRoutes from './routes/analytics.js';
 
 // ─── App Setup ──────────────────────────────────────────────
@@ -43,6 +45,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// Serve static uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -58,6 +63,7 @@ app.use('/api/credits',   creditRoutes);
 app.use('/api/reviews',   reviewRoutes);
 app.use('/api/messages',  messageRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/google',    googleAuthRoutes);
 
 // ── 404 fallback ────────────────────────────────────────────
 app.use((_req, res) => {

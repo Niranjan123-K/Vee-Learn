@@ -1,0 +1,31 @@
+/* ==========================================================================
+   REVIEW MODAL
+   ========================================================================== */
+
+.star-rating-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast);
+}
+
+.star-btn:hover {
+  transform: scale(1.1);
+}
+
+.star-btn:active {
+  transform: scale(0.95);
+}

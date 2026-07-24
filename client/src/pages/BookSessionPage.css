@@ -1,97 +1,136 @@
+/* ==========================================================================
+   BOOK SESSION PAGE
+   ========================================================================== */
+
 .book-layout {
-  max-width: 640px;
+  display: flex;
+  gap: var(--space-xl);
+  align-items: flex-start;
+  max-width: 900px;
   margin: 0 auto;
 }
 
-.book-form {
-  padding: var(--space-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+.book-sidebar {
+  width: 280px;
+  flex-shrink: 0;
 }
 
-.book-teacher-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding-bottom: var(--space-lg);
-  border-bottom: 1px solid var(--border-glass);
+.book-main {
+  flex: 1;
+  min-width: 0;
 }
 
-.book-teacher-info h3 {
-  font-size: var(--font-lg);
-  font-weight: 600;
-}
-
-.time-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.time-slot {
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-xs);
-  font-weight: 500;
-  background: var(--bg-card);
-  border: 1px solid var(--border-glass);
-  color: var(--text-secondary);
-  transition: all var(--transition-normal);
-  cursor: pointer;
-}
-
-.time-slot:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.time-slot.active {
-  background: var(--accent-gradient);
-  color: white;
-  border-color: transparent;
-  box-shadow: var(--shadow-glow);
-}
-
-.book-cost-summary {
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.book-cost-row {
+/* ---------- Stepper ---------- */
+.book-stepper {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: var(--font-sm);
-  color: var(--text-secondary);
+  margin-bottom: var(--space-xl);
+  padding: 0 var(--space-lg);
 }
 
-.book-cost-value {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.book-warning {
+.stepper-step {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 12px 16px;
-  background: var(--warning-bg);
-  border: 1px solid rgba(243, 156, 18, 0.3);
-  border-radius: var(--radius-md);
-  color: var(--warning);
-  font-size: var(--font-sm);
+  position: relative;
+  flex: 1;
 }
 
-/* Style date and select inputs */
-.book-form select,
-.book-form input[type="date"] {
-  background: var(--bg-input);
-  color: var(--text-primary);
-  color-scheme: dark;
+.stepper-step:last-child {
+  flex: 0;
 }
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.step-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border-primary);
+  margin: 0 var(--space-sm);
+  transition: all var(--transition-fast);
+}
+
+.stepper-step.active .step-circle {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.stepper-step.active .step-label {
+  color: var(--text-primary);
+}
+
+.stepper-step.active .step-line {
+  background: var(--accent-muted);
+}
+
+
+
+/* ---------- Review Box ---------- */
+.review-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .book-layout {
+    flex-direction: column;
+  }
+  
+  .book-sidebar {
+    display: none;
+  }
+  
+  .book-stepper {
+    padding: 0;
+  }
+  
+  .step-label {
+    display: none;
+  }
+}
+
+
+

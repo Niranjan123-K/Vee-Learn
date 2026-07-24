@@ -1,52 +1,178 @@
-.explore-search {
-  position: relative;
+/* ==========================================================================
+   EXPLORE PAGE
+   ========================================================================== */
+
+.explore-layout {
+  display: flex;
+  gap: var(--space-xl);
+  align-items: flex-start;
+}
+
+/* ---------- Sidebar Filters ---------- */
+.explore-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--space-xl));
+}
+
+.explore-category-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  text-align: left;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.explore-category-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.explore-category-btn.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-weight: 500;
+}
+
+
+/* ---------- Main Results ---------- */
+.explore-results {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.explore-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-lg);
 }
 
-.explore-search-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.explore-search-input {
-  padding-left: 48px !important;
-  padding: 14px 16px 14px 48px;
-  font-size: var(--font-base);
-  border-radius: var(--radius-lg);
-}
-
-.explore-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-lg);
-}
-
-.explore-skill-card {
-  padding: var(--space-lg);
+.explore-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  min-height: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.explore-skill-category {
-  font-size: var(--font-xs);
-  color: var(--accent-secondary);
+.user-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.user-list-item:last-child {
+  border-bottom: none;
+}
+
+.user-list-item:hover {
+  background: var(--bg-elevated);
+}
+
+.user-item-avatar {
+  flex-shrink: 0;
+}
+
+.user-item-info {
+  flex: 1.5;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-item-name {
+  font-size: var(--font-base);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  margin: 0;
 }
 
-.explore-skill-name {
-  font-size: var(--font-xl);
-  font-weight: 700;
+.user-item-bio {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.explore-skill-teachers {
+.user-item-skills {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.user-item-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--text-secondary);
+}
+
+.user-item-action {
+  flex-shrink: 0;
+  margin-left: var(--space-sm);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all var(--transition-fast);
+}
+
+.user-list-item:hover .user-item-action {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 992px) {
+  .explore-layout {
+    flex-direction: column;
+  }
+  
+  .explore-sidebar {
+    width: 100%;
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-list-item {
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+  .user-item-skills {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .user-item-stats {
+    order: 4;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }

@@ -2,19 +2,18 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Compass, Users, Calendar,
-  MessageCircle, Wallet, User, ChevronLeft, Sparkles
+  MessageCircle, Wallet, User
 } from 'lucide-react';
 import useChatStore from '../stores/chatStore';
 import './Sidebar.css';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/explore', label: 'Explore Skills', icon: Compass },
-  { path: '/match/all', label: 'Find a Match', icon: Users },
-  { path: '/sessions', label: 'My Sessions', icon: Calendar },
+  { path: '/explore', label: 'Explore', icon: Compass },
+  { path: '/match/all', label: 'Matches', icon: Users },
+  { path: '/sessions', label: 'Sessions', icon: Calendar },
   { path: '/messages', label: 'Messages', icon: MessageCircle, hasBadge: true },
-  { path: '/ledger', label: 'Credit Ledger', icon: Wallet },
-  { path: '/profile', label: 'My Profile', icon: User },
+  { path: '/ledger', label: 'Ledger', icon: Wallet },
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
@@ -22,29 +21,16 @@ export default function Sidebar({ collapsed, onToggle }) {
   const { unreadCount } = useChatStore();
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className="sidebar-container">
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <Sparkles size={22} />
-          </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                className="sidebar-logo-text gradient-text"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                Vee Learn
-              </motion.span>
-            )}
-          </AnimatePresence>
+        <div className="sidebar-logo-icon">
+          {/* Logo removed */}
         </div>
-        <button className="sidebar-toggle" onClick={onToggle} aria-label="Toggle sidebar">
-          <ChevronLeft size={18} className={`sidebar-toggle-icon ${collapsed ? 'rotated' : ''}`} />
-        </button>
+        {!collapsed && (
+          <span className="sidebar-logo-text">
+            Vee Learn
+          </span>
+        )}
       </div>
 
       <nav className="sidebar-nav">
@@ -60,31 +46,20 @@ export default function Sidebar({ collapsed, onToggle }) {
               className={`sidebar-link ${isActive ? 'active' : ''}`}
               title={collapsed ? item.label : undefined}
             >
-              {isActive && (
-                <motion.div
-                  className="sidebar-active-indicator"
-                  layoutId="sidebar-indicator"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
-              <span className="sidebar-link-icon">
-                <Icon size={20} />
-              </span>
-              <AnimatePresence>
+              <div className="sidebar-link-inner">
+                <span className="sidebar-link-icon">
+                  <Icon size={18} />
+                </span>
                 {!collapsed && (
-                  <motion.span
-                    className="sidebar-link-label"
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <span className="sidebar-link-label">
                     {item.label}
-                  </motion.span>
+                  </span>
                 )}
-              </AnimatePresence>
+              </div>
               {item.hasBadge && unreadCount > 0 && (
-                <span className="sidebar-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                <span className={`sidebar-badge ${collapsed ? 'collapsed' : ''}`}>
+                  {collapsed ? '' : (unreadCount > 9 ? '9+' : unreadCount)}
+                </span>
               )}
             </NavLink>
           );
@@ -93,14 +68,9 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       <div className="sidebar-footer">
         {!collapsed && (
-          <motion.div
-            className="sidebar-footer-card"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <p className="sidebar-footer-text">Share skills, earn time credits</p>
-          </motion.div>
+          <div className="sidebar-footer-content">
+            <span className="text-muted" style={{fontSize: '11px'}}>© 2026 Vee Learn</span>
+          </div>
         )}
       </div>
     </aside>
