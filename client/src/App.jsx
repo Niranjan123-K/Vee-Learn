@@ -15,7 +15,8 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
-const MatchPage = lazy(() => import('./pages/MatchPage'));
+const MatchPageLegacy = lazy(() => import('./pages/MatchPageLegacy'));
+const MyLearningPage = lazy(() => import('./pages/MyLearningPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const BookSessionPage = lazy(() => import('./pages/BookSessionPage'));
 const SessionsPage = lazy(() => import('./pages/SessionsPage'));
@@ -55,7 +56,8 @@ function App() {
             <Route path="/dashboard" element={<Suspense fallback={<LearningAnimation />}><DashboardPage /></Suspense>} />
             <Route path="/explore" element={<Suspense fallback={<LearningAnimation />}><ExplorePage /></Suspense>} />
             <Route path="/about" element={<Suspense fallback={<LearningAnimation />}><AboutPage /></Suspense>} />
-            <Route path="/match/:skillId" element={<Suspense fallback={<LearningAnimation />}><MatchPage /></Suspense>} />
+            <Route path="/learning" element={<Suspense fallback={<LearningAnimation />}><MyLearningPage /></Suspense>} />
+            <Route path="/match/legacy/:skillId" element={<Suspense fallback={<LearningAnimation />}><MatchPageLegacy /></Suspense>} />
             <Route path="/profile" element={<Suspense fallback={<LearningAnimation />}><ProfilePage /></Suspense>} />
             <Route path="/profile/:userId" element={<Suspense fallback={<LearningAnimation />}><ProfilePage /></Suspense>} />
             <Route path="/book/:teacherId" element={<Suspense fallback={<LearningAnimation />}><BookSessionPage /></Suspense>} />

@@ -14,7 +14,7 @@ export async function getProfile(req, res) {
     }
 
     const { rows: [user] } = await query(
-      `SELECT id, name, email, bio, avatar_url, wallpaper_url, credit_balance, created_at
+      `SELECT id, name, email, bio, avatar_url, wallpaper_url, credit_balance, created_at, title, department, education, hourly_rate, languages, custom_availability
        FROM users WHERE id = $1`,
       [id],
     );
@@ -176,7 +176,7 @@ export async function getTeachers(req, res) {
  */
 export async function updateProfile(req, res) {
   try {
-    const { name, bio, avatar_url, experience_level, preferred_language, location, availability } = req.body;
+    const { name, bio, avatar_url, experience_level, preferred_language, location, availability, title, department, education, hourly_rate, languages, custom_availability } = req.body;
 
     const { rows: [user] } = await query(
       `UPDATE users
@@ -186,9 +186,15 @@ export async function updateProfile(req, res) {
            experience_level   = COALESCE($4, experience_level),
            preferred_language = COALESCE($5, preferred_language),
            location           = COALESCE($6, location),
-           availability       = COALESCE($7, availability)
-       WHERE id = $8
-       RETURNING id, name, email, bio, avatar_url, credit_balance, experience_level, preferred_language, location, availability, profile_completed, created_at`,
+           availability       = COALESCE($7, availability),
+           title              = COALESCE($8, title),
+           department         = COALESCE($9, department),
+           education          = COALESCE($10, education),
+           hourly_rate        = COALESCE($11, hourly_rate),
+           languages          = COALESCE($12, languages),
+           custom_availability= COALESCE($13, custom_availability)
+       WHERE id = $14
+       RETURNING id, name, email, bio, avatar_url, credit_balance, experience_level, preferred_language, location, availability, profile_completed, created_at, title, department, education, hourly_rate, languages, custom_availability`,
       [
         name || null, 
         bio ?? null, 
@@ -197,6 +203,12 @@ export async function updateProfile(req, res) {
         preferred_language ?? null, 
         location ?? null, 
         availability ?? null, 
+        title ?? null,
+        department ?? null,
+        education ?? null,
+        hourly_rate ?? null,
+        languages ?? null,
+        custom_availability ?? null,
         req.user.id
       ],
     );

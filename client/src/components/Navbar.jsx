@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, Users, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search } from 'lucide-react';
+import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, BookOpen, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import useNotificationStore from '../stores/notificationStore';
 import api from '../utils/api';
 import CreditBadge from './CreditBadge';
 import { getInitials, formatRelativeTime } from '../utils/formatters';
+import CommandPalette from './CommandPalette';
 import './Navbar.css';
 
 const notifIcons = {
@@ -30,6 +31,7 @@ export default function Navbar({ onToggleSidebar }) {
   const resolveNotification = useNotificationStore((s) => s.resolveNotification);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showCmd, setShowCmd] = useState(false);
   const [loadingAction, setLoadingAction] = useState(null);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
@@ -56,7 +58,19 @@ export default function Navbar({ onToggleSidebar }) {
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCmd(true);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -106,7 +120,7 @@ export default function Navbar({ onToggleSidebar }) {
   const mobileNavItems = [
     { path: '/dashboard', icon: LayoutDashboard },
     { path: '/explore', icon: Compass },
-    { path: '/match/all', icon: Users },
+    { path: '/learning', icon: BookOpen },
   ];
 
   return (
@@ -138,16 +152,20 @@ export default function Navbar({ onToggleSidebar }) {
         </div>
 
         <div className="navbar-center hide-on-mobile">
-          <form className="navbar-search wow-search" onSubmit={handleSearchSubmit}>
+          <div 
+            className="navbar-search" 
+            onClick={() => setShowCmd(true)}
+            style={{ cursor: 'pointer' }}
+          >
             <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              className="form-input search-input" 
-              placeholder="Search skills or names..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
+            <div className="form-input search-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+              <span>Search everywhere...</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontFamily: 'monospace' }}>Ctrl</kbd>
+                <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontFamily: 'monospace' }}>K</kbd>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="navbar-right">
@@ -299,7 +317,7 @@ export default function Navbar({ onToggleSidebar }) {
             key={item.path}
             to={item.path}
             className={({ isActive }) => 
-              `tab-link ${isActive || (item.path === '/match/all' && location.pathname.startsWith('/match')) ? 'active' : ''}`
+              `tab-link ${isActive || (item.path === '/learning' && location.pathname.startsWith('/learning')) ? 'active' : ''}`
             }
           >
             <item.icon size={24} />
@@ -312,6 +330,7 @@ export default function Navbar({ onToggleSidebar }) {
           <User size={24} />
         </NavLink>
       </nav>
+      <CommandPalette isOpen={showCmd} onClose={() => setShowCmd(false)} />
     </>
   );
 }

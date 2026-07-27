@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownLeft, Zap, ArrowRightLeft } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Wallet, ArrowRightLeft, History, Award } from 'lucide-react';
 import api from '../utils/api';
 import useAuthStore from '../stores/authStore';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import './LedgerPage.css';
+
+// Robust helper to classify any credit transaction regardless of case or alias
+const isEarnTransaction = (t, userId) => {
+  const type = t?.type?.toLowerCase() || '';
+  if (['earn', 'bonus', 'refund', 'initial'].includes(type)) return true;
+  if (['spend', 'expense'].includes(type)) return false;
+  if (type === 'transfer') return String(t.to_user_id) === String(userId);
+  return String(t.to_user_id) === String(userId);
+};
 
 export default function LedgerPage() {
   const user = useAuthStore(state => state.user);
@@ -15,10 +24,11 @@ export default function LedgerPage() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await api.get('/ledger');
+        // Hitting the correct /credits/history endpoint instead of invalid 404 /ledger route
+        const res = await api.get('/credits/history');
         setTransactions(res.data.transactions || []);
       } catch (err) {
-        console.error('Failed to load ledger', err);
+        console.error('Failed to load ledger history:', err);
       } finally {
         setLoading(false);
       }
@@ -27,16 +37,16 @@ export default function LedgerPage() {
   }, []);
 
   const totalEarned = transactions
-    .filter(t => t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id))
-    .reduce((acc, t) => acc + t.amount, 0);
+    .filter(t => isEarnTransaction(t, user?.id))
+    .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
 
   const totalSpent = transactions
-    .filter(t => t.type === 'SPEND' || (t.type === 'TRANSFER' && t.from_user_id === user?.id))
-    .reduce((acc, t) => acc + t.amount, 0);
+    .filter(t => !isEarnTransaction(t, user?.id))
+    .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
 
   const filteredTransactions = transactions.filter(t => {
     if (filter === 'all') return true;
-    const isEarn = t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id);
+    const isEarn = isEarnTransaction(t, user?.id);
     if (filter === 'earned') return isEarn;
     if (filter === 'spent') return !isEarn;
     return true;
@@ -47,86 +57,120 @@ export default function LedgerPage() {
       <PageHeader 
         breadcrumb={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Ledger' }]}
         title="Credit Ledger"
-        description="Track your time credits earned from teaching and spent on learning."
+        description="Organize and monitor your time credit transactions, balances, and earning history."
       />
 
-      {/* Summary Cards */}
+      {/* Structured Summary Metric Cards */}
       <div className="ledger-summary">
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-warning"><Zap size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Current Balance</span>
-            <span className="stat-value">{user?.credit_balance || 0}</span>
+        <div className="ledger-stat-card">
+          <div className="ledger-stat-icon balance">
+            <Wallet size={26} />
+          </div>
+          <div className="ledger-stat-content">
+            <span className="ledger-stat-label">Current Balance</span>
+            <span className="ledger-stat-value">{user?.credit_balance || 0}</span>
           </div>
         </div>
         
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-success"><ArrowUpRight size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Total Earned</span>
-            <span className="stat-value">{totalEarned}</span>
+        <div className="ledger-stat-card">
+          <div className="ledger-stat-icon earned">
+            <ArrowUpRight size={26} />
+          </div>
+          <div className="ledger-stat-content">
+            <span className="ledger-stat-label">Total Earned</span>
+            <span className="ledger-stat-value">{totalEarned}</span>
           </div>
         </div>
         
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-info"><ArrowDownLeft size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Total Spent</span>
-            <span className="stat-value">{totalSpent}</span>
+        <div className="ledger-stat-card">
+          <div className="ledger-stat-icon spent">
+            <ArrowDownLeft size={26} />
+          </div>
+          <div className="ledger-stat-content">
+            <span className="ledger-stat-label">Total Spent</span>
+            <span className="ledger-stat-value">{totalSpent}</span>
           </div>
         </div>
       </div>
 
-      <div className="card mt-xl">
-        <div className="card-header">
-          <h3 className="card-header-title">Transaction History</h3>
-          <div className="tabs" style={{borderBottom: 'none'}}>
-            <button className={`tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
-            <button className={`tab ${filter === 'earned' ? 'active' : ''}`} onClick={() => setFilter('earned')}>Earned</button>
-            <button className={`tab ${filter === 'spent' ? 'active' : ''}`} onClick={() => setFilter('spent')}>Spent</button>
+      {/* Organized Transaction History */}
+      <div className="ledger-history-card">
+        <div className="ledger-history-header">
+          <h3 className="ledger-history-title">
+            <History size={22} className="text-accent" />
+            Transaction History
+          </h3>
+          
+          <div className="ledger-filter-pills">
+            <button className={`ledger-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+              All Transactions
+            </button>
+            <button className={`ledger-pill ${filter === 'earned' ? 'active' : ''}`} onClick={() => setFilter('earned')}>
+              Earned / Received
+            </button>
+            <button className={`ledger-pill ${filter === 'spent' ? 'active' : ''}`} onClick={() => setFilter('spent')}>
+              Spent / Used
+            </button>
           </div>
         </div>
         
-        <div className="card-body" style={{padding: 0}}>
+        <div className="ledger-history-body">
           {loading ? (
-            <div className="p-lg">
-              <div className="skeleton" style={{ height: '60px', marginBottom: '10px' }} />
-              <div className="skeleton" style={{ height: '60px', marginBottom: '10px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="skeleton" style={{ height: '76px', borderRadius: '12px' }} />
+              ))}
             </div>
           ) : filteredTransactions.length > 0 ? (
             <div className="transaction-list">
               {filteredTransactions.map(t => {
-                const isEarn = t.type === 'EARN' || (t.type === 'TRANSFER' && t.to_user_id === user?.id);
+                const isEarn = isEarnTransaction(t, user?.id);
+                const typeLower = t?.type?.toLowerCase() || '';
                 
+                let title = t.type;
+                let badge = 'Transaction';
+                let iconClass = isEarn ? 'earn' : 'spend';
+
+                if (typeLower === 'initial' || typeLower === 'bonus') {
+                  title = 'Welcome Bonus Grant';
+                  badge = 'Bonus';
+                  iconClass = 'grant';
+                } else if (typeLower === 'earn') {
+                  title = 'Received for Teaching Session';
+                  badge = 'Income';
+                } else if (typeLower === 'spend') {
+                  title = 'Paid for Learning Session';
+                  badge = 'Expense';
+                } else if (typeLower === 'refund') {
+                  title = 'Session Cancellation Refund';
+                  badge = 'Refund';
+                } else if (typeLower === 'transfer') {
+                  title = isEarn ? 'Received for Session' : 'Paid for Session';
+                  badge = isEarn ? 'Income' : 'Expense';
+                }
+
                 return (
-                  <div key={t.id} className="transaction-item">
-                    <div className="transaction-icon">
-                      {t.type === 'TRANSFER' ? (
-                        <div className={`icon-circle ${isEarn ? 'bg-success-muted text-success' : 'bg-info-muted text-info'}`}>
-                           {isEarn ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
+                  <div key={t.id} className="transaction-card-item">
+                    <div className="transaction-main">
+                      <div className={`transaction-icon-box ${iconClass}`}>
+                        {iconClass === 'grant' ? <Award size={22} /> : isEarn ? <ArrowUpRight size={22} /> : <ArrowDownLeft size={22} />}
+                      </div>
+                      
+                      <div className="transaction-info">
+                        <div className="transaction-title-row">
+                          <h4 className="transaction-title">{title}</h4>
+                          <span className="transaction-badge">{badge}</span>
                         </div>
-                      ) : (
-                        <div className="icon-circle bg-warning-muted text-warning">
-                          <Zap size={18} />
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="transaction-content">
-                      <h4 className="transaction-title">
-                        {t.type === 'INITIAL' ? 'Initial Grant' : 
-                         t.type === 'TRANSFER' ? (isEarn ? 'Received for Session' : 'Paid for Session') : 
-                         t.type}
-                      </h4>
-                      <p className="transaction-desc">{t.description}</p>
+                        <p className="transaction-desc">{t.description || (isEarn ? 'Credits received' : 'Credits deducted')}</p>
+                      </div>
                     </div>
                     
                     <div className="transaction-meta">
-                      <span className={`transaction-amount ${isEarn ? 'text-success' : 'text-info'}`}>
+                      <span className={`transaction-amount ${isEarn ? 'plus' : 'minus'}`}>
                         {isEarn ? '+' : '-'}{t.amount} {Math.abs(t.amount) === 1 ? 'Credit' : 'Credits'}
                       </span>
                       <span className="transaction-date">
-                        {new Date(t.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}
+                        {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                   </div>
@@ -136,9 +180,9 @@ export default function LedgerPage() {
           ) : (
             <EmptyState 
               icon={ArrowRightLeft}
-              title="No transactions found"
-              description="You haven't earned or spent any credits yet."
-              action={{ label: 'Earn Credits', to: '/explore' }}
+              title={filter === 'all' ? "No transactions found yet" : `No transactions found under '${filter === 'earned' ? 'Earned / Received' : 'Spent / Used'}'`}
+              description={filter === 'all' ? "You haven't earned or spent any credits yet." : `Try switching filters or explore sessions to start transacting credits.`}
+              action={filter === 'all' ? { label: 'Explore Teachers & Earn Credits', to: '/explore' } : undefined}
             />
           )}
         </div>

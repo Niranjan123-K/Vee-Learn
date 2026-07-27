@@ -8,51 +8,51 @@
 /* ---------- CSS Custom Properties ---------- */
 :root {
   /* Backgrounds */
-  --bg-primary: #0B0B0D;
-  --bg-secondary: #121316;
-  --bg-surface: #121316;
-  --bg-card: #181A1F;
-  --bg-elevated: #20242C;
-  --bg-card-hover: #20242C;
-  --bg-input: #121316;
-  --bg-input-focus: #181A1F;
+  --bg-primary: #22232A;
+  --bg-secondary: #292A32;
+  --bg-surface: #292A32;
+  --bg-card: #292A32;
+  --bg-elevated: #31333E;
+  --bg-card-hover: #31333E;
+  --bg-input: #1F2026;
+  --bg-input-focus: #292A32;
 
   /* Borders */
-  --border-primary: #2A2E38;
-  --border-secondary: #2A2E38;
-  --border-strong: #2A2E38;
+  --border-primary: #373943;
+  --border-secondary: #373943;
+  --border-strong: #4B4D58;
   --border-focus: var(--accent);
   /* Legacy aliases */
-  --border-subtle: #2A2E38;
-  --border-color: #2A2E38;
+  --border-subtle: #373943;
+  --border-color: #373943;
 
   /* Text */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #94A3B8;
-  --text-inverse: #0B0B0D;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A2B1;
+  --text-muted: #6E707E;
+  --text-inverse: #22232A;
 
   /* Accent */
-  --accent: #3B82F6;
-  --accent-hover: #2563EB;
-  --accent-muted: rgba(59, 130, 246, 0.12);
-  --accent-text: #F8FAFC;
+  --accent: #FF4757;
+  --accent-hover: #FF6B78;
+  --accent-muted: rgba(255, 71, 87, 0.12);
+  --accent-text: #FF4757;
 
   /* Status Colors */
   --success: #22C55E;
   --success-muted: rgba(34, 197, 94, 0.12);
   --warning: #F59E0B;
   --warning-muted: rgba(245, 158, 11, 0.12);
-  --danger: #EF4444;
-  --danger-muted: rgba(239, 68, 68, 0.12);
-  --info: #3B82F6;
-  --info-muted: rgba(59, 130, 246, 0.12);
+  --danger: #FF4757;
+  --danger-muted: rgba(255, 71, 87, 0.12);
+  --info: #FF4757;
+  --info-muted: rgba(255, 71, 87, 0.12);
 
   /* Legacy color aliases */
   --color-success: #22C55E;
-  --color-error: #EF4444;
-  --primary: #3B82F6;
-  --primary-rgb: 59, 130, 246;
+  --color-error: #FF4757;
+  --primary: #FF4757;
+  --primary-rgb: 255, 71, 87;
 
   /* Border Radius */
   --radius-xs: 4px;
@@ -128,9 +128,7 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-base);
   background-color: var(--bg-primary);
-  /* Extremely subtle radial gradient for depth */
-  background-image: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
-                    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+  background-image: none;
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: var(--leading-relaxed);
@@ -220,8 +218,8 @@ img {
   justify-content: center;
   gap: var(--space-sm);
   padding: 8px 16px;
-  background: var(--text-primary);
-  color: var(--text-inverse);
+  background: var(--accent);
+  color: #fff;
   font-weight: 500;
   font-size: var(--font-sm);
   border-radius: var(--radius-md);
@@ -230,7 +228,7 @@ img {
   white-space: nowrap;
   cursor: pointer;
 }
-.btn-primary:hover { background: #fff; transform: translateY(-1px); }
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -344,15 +342,15 @@ img {
   justify-content: center;
   gap: var(--space-sm);
   padding: 8px 16px;
-  background: var(--text-primary);
-  color: var(--text-inverse);
+  background: var(--accent);
+  color: #fff;
   font-weight: 500;
   font-size: var(--font-sm);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.gradient-btn:hover { background: #fff; }
+.gradient-btn:hover { background: var(--accent-hover); }
 .gradient-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .gradient-btn-outline, .btn-outline {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock, 
-  Check, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
+  Check, CheckCheck, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
   CheckCircle, Zap, MessageSquare
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
@@ -25,10 +25,10 @@ const ChatMessage = React.memo(({ msg, isMe, showDate, isGrouped }) => {
       )}
       <div className={`chat-message-wrapper ${isMe ? 'is-me' : 'is-other'} ${!isGrouped ? 'margin-top' : ''}`}>
         <div className="chat-bubble">
-          {msg.text}
+          <div className="chat-bubble-text">{msg.text}</div>
           <div className="chat-bubble-meta">
             <span>{timeStr}</span>
-            {isMe && <Check size={12} />}
+            {isMe && <CheckCheck size={15} className="read-check-icon" />}
           </div>
         </div>
       </div>
@@ -79,11 +79,25 @@ export default function SessionChatPage() {
         setSession(sessionRes.data.session);
         setMessages(messagesRes.data.messages || []);
         
-        const filtered = (allSessionsRes.data.sessions || []).filter(s => 
+        const rawSessions = (allSessionsRes.data.sessions || []).filter(s => 
           ['confirmed', 'completed'].includes(s.status)
-        ).sort((a,b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
-        
-        setAllSessions(filtered);
+        ).sort((a,b) => {
+          if (a.id === sessionId) return -1;
+          if (b.id === sessionId) return 1;
+          return new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at);
+        });
+
+        const seenPartners = new Set();
+        const deduplicationList = [];
+        for (const s of rawSessions) {
+          const partnerId = s.teacher_id === user?.id ? s.learner_id : s.teacher_id;
+          if (!seenPartners.has(partnerId)) {
+            seenPartners.add(partnerId);
+            deduplicationList.push(s);
+          }
+        }
+
+        setAllSessions(deduplicationList);
       } catch (err) {
         console.error('Failed to load session chat:', err);
         setError('Failed to load session chat.');
@@ -231,7 +245,7 @@ export default function SessionChatPage() {
   };
 
   return (
-    <div className="chat-workspace">
+    <div className={`chat-workspace ${showRightDrawer ? 'drawer-open' : ''}`}>
       
       {/* 1. LEFT PANEL: Conversations */}
       <aside className={`chat-left-sidebar ${showLeftDrawer ? 'show' : ''}`}>
@@ -275,11 +289,12 @@ export default function SessionChatPage() {
                 <div className="chat-list-content">
                   <div className="chat-list-top">
                     <span className="chat-list-name truncate">{sPartnerName}</span>
-                    <span className="chat-list-time">12m</span>
+                    <span className="chat-list-time">
+                      {new Date(s.updated_at || s.created_at || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
                   <div className="chat-list-preview">
-                    <span className="chat-list-msg">Click to view session...</span>
-                    {isActive && <span className="unread-badge">1</span>}
+                    <span className="chat-list-msg">💬 {s.skill_name || 'Active session workspace'}</span>
                   </div>
                 </div>
               </Link>
@@ -290,13 +305,13 @@ export default function SessionChatPage() {
 
       {/* 2. CENTER PANEL: Chat Canvas */}
       <main className="chat-center">
-        {/* Rich Session Banner */}
+        {/* WhatsApp Header Strip */}
         <header className="chat-header">
-          <div className="chat-header-left">
-            <button className="btn-icon show-on-mobile" onClick={() => setShowLeftDrawer(true)}>
+          <div className="chat-header-left" onClick={() => setShowRightDrawer(!showRightDrawer)}>
+            <button className="btn-icon show-on-mobile" onClick={(e) => { e.stopPropagation(); setShowLeftDrawer(true); }}>
               <Menu size={18} />
             </button>
-            <button className="btn-icon hide-on-mobile" onClick={() => navigate('/sessions')}>
+            <button className="btn-icon hide-on-mobile" onClick={(e) => { e.stopPropagation(); navigate('/sessions'); }}>
               <ArrowLeft size={18} />
             </button>
             
@@ -306,21 +321,35 @@ export default function SessionChatPage() {
               <h2 className="session-hub-title">
                 {partner.name}
                 <span className="header-role-badge">{partner.role}</span>
-                <span className="chat-list-skill">{session.skill_name}</span>
               </h2>
               <div className="session-hub-meta">
-                <span className={`countdown-highlight ${session.status === 'completed' ? 'text-success' : ''}`}>
-                  {renderCountdown()}
+                <span className="countdown-highlight">
+                  {session.status === 'confirmed' ? 'Online • ' : ''}{renderCountdown()}
                 </span>
                 <span>•</span>
-                <span>{session.status.toUpperCase()}</span>
+                <span>{session.skill_name}</span>
               </div>
             </div>
           </div>
           
           <div className="chat-header-right">
-            <button className="btn-icon hide-on-desktop" onClick={() => setShowRightDrawer(true)}>
-              <MoreVertical size={18} />
+            {session.status === 'confirmed' && session.meeting_link && (
+              <a 
+                href={session.meeting_link} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="wa-header-action-btn green-btn"
+                title="Join Video Call"
+                onClick={(e) => { if (!isMeetingReady()) { e.preventDefault(); alert('Meeting link is available 10 minutes before start.'); } }}
+              >
+                <Video size={20} />
+              </a>
+            )}
+            <button className="wa-header-action-btn" title="Workspace Info" onClick={() => setShowRightDrawer(!showRightDrawer)}>
+              <Info size={20} />
+            </button>
+            <button className="wa-header-action-btn" title="Menu" onClick={() => setShowRightDrawer(!showRightDrawer)}>
+              <MoreVertical size={20} />
             </button>
           </div>
         </header>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Clock, Calendar, Users, ChevronRight, Compass, ArrowRight, 
-  Zap, CheckCircle, XCircle, MessageSquare, Star, BookOpen, 
+  Zap, Check, X, MessageSquare, Star, BookOpen, 
   CalendarCheck, MessageCircle, Wallet, ArrowUpRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -89,7 +89,7 @@ export default function DashboardPage() {
             <div className="card-header">
               <div className="card-header-left">
                 <h3 className="card-header-title">
-                  <Calendar size={20} className="text-primary" /> Today's Sessions
+                  <Calendar size={20} /> Today's Sessions
                 </h3>
                 <p className="card-header-subtitle">Your scheduled learning sessions for today.</p>
               </div>
@@ -144,7 +144,7 @@ export default function DashboardPage() {
                 <div className="card-header">
                   <div className="card-header-left">
                     <h3 className="card-header-title">
-                      <Clock size={20} className="text-warning" /> Pending Requests
+                      <Clock size={20} /> Pending Requests
                     </h3>
                     <p className="card-header-subtitle">Requests waiting for your response.</p>
                   </div>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                         return (
                           <div key={session.id} className="dash-list-item" onClick={() => navigate('/sessions')}>
                              <div className="dash-item-icon">
-                               <Clock size={18} className="text-warning" />
+                               <Clock size={20} />
                              </div>
                              <div className="dash-item-content">
                                <p className="dash-item-title">{partnerName}</p>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                 <div className="card-header">
                   <div className="card-header-left">
                     <h3 className="card-header-title">
-                      <Zap size={20} className="text-success" /> Recent Activity
+                      <Zap size={20} /> Recent Activity
                     </h3>
                     <p className="card-header-subtitle">Your latest learning activity.</p>
                   </div>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                          return (
                            <div key={session.id} className="dash-list-item">
                               <div className="dash-item-icon">
-                                 {isCompleted ? <CheckCircle size={18} className="text-success" /> : <XCircle size={18} className="text-danger" />}
+                                 {isCompleted ? <Check size={20} /> : <X size={20} />}
                               </div>
                               <div className="dash-item-content">
                                 <p className="dash-item-title">{isCompleted ? 'Session Completed' : 'Session Cancelled'}</p>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                 <div className="card-header">
                   <div className="card-header-left">
                     <h3 className="card-header-title">
-                      <Compass size={20} className="text-info" /> Quick Actions
+                      <Compass size={20} /> Quick Actions
                     </h3>
                     <p className="card-header-subtitle">Frequently used shortcuts.</p>
                   </div>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
                   <div className="quick-actions-grid">
                     
                     <div className="qa-tile" onClick={() => navigate('/explore')}>
-                      <div className="qa-icon-wrapper text-accent">
+                      <div className="qa-icon-wrapper">
                         <BookOpen size={20} />
                       </div>
                       <div className="qa-title">
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="qa-tile" onClick={() => navigate('/sessions')}>
-                      <div className="qa-icon-wrapper text-success">
+                      <div className="qa-icon-wrapper">
                         <Calendar size={20} />
                       </div>
                       <div className="qa-title">
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="qa-tile" onClick={() => navigate('/messages')}>
-                      <div className="qa-icon-wrapper text-info">
+                      <div className="qa-icon-wrapper">
                         <MessageCircle size={20} />
                       </div>
                       <div className="qa-title">
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="qa-tile" onClick={() => navigate('/ledger')}>
-                      <div className="qa-icon-wrapper text-warning">
+                      <div className="qa-icon-wrapper">
                         <Wallet size={20} />
                       </div>
                       <div className="qa-title">
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                 <div className="card-header">
                   <div className="card-header-left">
                     <h3 className="card-header-title">
-                      <MessageSquare size={20} className="text-info" /> Active Conversations
+                      <MessageSquare size={20} /> Active Conversations
                     </h3>
                     <p className="card-header-subtitle">Your ongoing chats with peers.</p>
                   </div>

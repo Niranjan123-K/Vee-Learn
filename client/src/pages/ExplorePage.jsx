@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Compass, SlidersHorizontal, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { SlidersHorizontal, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import UserCard from '../components/UserCard';
-import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import './ExplorePage.css';
 
@@ -13,7 +11,7 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get('q') || '';
-  const [category, setCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('rating');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,88 +28,66 @@ export default function ExplorePage() {
     fetchTeachers();
   }, []);
 
-  // Compute unique categories from the fetched teachers (who are offering these skills)
-  const availableCategories = new Set();
-  teachers.forEach(t => {
-    (t.skills_offered || []).forEach(skill => {
-      if (skill.category) {
-        availableCategories.add(skill.category);
-      }
-    });
-  });
-
-  const categories = [
-    { id: 'all', label: 'All Skills' },
-    ...Array.from(availableCategories).map(cat => ({ id: cat, label: cat }))
-  ];
-
   const filteredTeachers = teachers.filter(t => {
     const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          t.skills_offered?.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Category matching based on actual categories in skills_offered
-    const matchesCategory = category === 'all' || 
-                            t.skills_offered?.some(s => s.category === category);
-                            
-    return matchesSearch && matchesCategory;
+                          t.skills_offered?.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          t.department?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const sorted = [...filteredTeachers].sort((a, b) => {
+    if (sortBy === 'rating') return (b.averageRating || 0) - (a.averageRating || 0);
+    if (sortBy === 'sessions') return (b.sessionsCompleted || 0) - (a.sessionsCompleted || 0);
+    return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
   return (
     <div className="page-container fade-in">
-      <PageHeader 
-        breadcrumb={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Explore' }]}
-        title="Explore Teachers"
-        description="Find skilled community members to learn from and grow your abilities."
-      />
+      
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+          {searchTerm ? `Search results for '${searchTerm}'` : 'Explore Teachers'}
+        </h1>
+        <p className="text-muted" style={{ fontSize: '15px' }}>
+          Showing {sorted.length} professional educator{sorted.length !== 1 ? 's' : ''} matching your criteria.
+        </p>
+      </div>
 
       <div className="explore-layout">
         
-        {/* LEFT: Filters */}
-        <aside className="explore-sidebar">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-header-title">Search & Filters</h3>
-              <SlidersHorizontal size={14} className="text-muted" />
-            </div>
-            <div className="card-body flex-col gap-lg">
-              
-              {/* Search is now in Navbar */}              <div className="form-group">
-                <label className="form-label">Categories</label>
-                <div className="flex-col gap-sm">
-                  {categories.map(c => (
-                    <button 
-                      key={c.id}
-                      className={`explore-category-btn ${category === c.id ? 'active' : ''}`}
-                      onClick={() => setCategory(c.id)}
+        {/* Main Content Area */}
+        <main className="explore-results" style={{ width: '100%' }}>
+          
+          <div className="card mb-xl" style={{ marginBottom: '24px', background: 'var(--bg-elevated)' }}>
+            <div className="card-body" style={{padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px'}}>
+              <div className="flex items-center gap-sm">
+                <SlidersHorizontal size={16} className="text-muted" />
+                <span className="text-secondary text-sm font-medium">Sort by:</span>
+                <div className="tabs" style={{borderBottom: 'none'}}>
+                  {['rating', 'sessions', 'newest'].map((option) => (
+                    <button
+                      key={option}
+                      className={`tab ${sortBy === option ? 'active' : ''}`}
+                      onClick={() => setSortBy(option)}
+                      style={{padding: '4px 12px', fontSize: 'var(--font-xs)'}}
                     >
-                      {c.label}
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
                     </button>
                   ))}
                 </div>
               </div>
-              
             </div>
-          </div>
-        </aside>
-
-        {/* RIGHT: Results */}
-        <main className="explore-results">
-          
-          <div className="explore-results-header">
-            <span className="text-muted" style={{fontSize: 'var(--font-sm)', fontWeight: 500}}>
-              Showing {filteredTeachers.length} result{filteredTeachers.length !== 1 ? 's' : ''}
-            </span>
           </div>
 
           {loading ? (
             <div className="explore-list">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="skeleton" style={{ height: 80, borderRadius: 0, borderBottom: '1px solid var(--border-primary)' }} />
+                <div key={i} className="skeleton" style={{ height: 260, borderRadius: 'var(--radius-lg)' }} />
               ))}
             </div>
-          ) : filteredTeachers.length > 0 ? (
+          ) : sorted.length > 0 ? (
             <div className="explore-list">
-              {filteredTeachers.map((teacher, i) => (
+              {sorted.map((teacher, i) => (
                 <UserCard key={teacher._id || teacher.id || i} user={teacher} index={i} />
               ))}
             </div>
@@ -119,13 +95,26 @@ export default function ExplorePage() {
             <EmptyState 
               icon={Users}
               title="No teachers found"
-              description="Try adjusting your search terms or selecting a different category."
+              description="Try adjusting your search terms to find more educators."
               action={
-                searchTerm || category !== 'all' 
-                ? { label: 'Clear Filters', onClick: () => { navigate('/explore'); setCategory('all'); } }
+                searchTerm
+                ? { label: 'Clear Search', onClick: () => navigate('/explore') }
                 : null
               }
             />
+          )}
+
+          {/* Static Pagination (Visual Stub) */}
+          {sorted.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', gap: '8px' }}>
+              <button className="btn-icon" disabled><ChevronLeft size={16} /></button>
+              <button className="btn-icon" style={{ background: 'var(--accent)', color: '#fff' }}>1</button>
+              <button className="btn-icon">2</button>
+              <button className="btn-icon">3</button>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', color: 'var(--text-muted)' }}>...</span>
+              <button className="btn-icon">6</button>
+              <button className="btn-icon"><ChevronRight size={16} /></button>
+            </div>
           )}
           
         </main>

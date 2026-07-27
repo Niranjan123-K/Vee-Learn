@@ -20,12 +20,21 @@ export default function MessagesPage() {
     const fetchConversations = async () => {
       try {
         const res = await api.get('/sessions');
-        // Only show confirmed or completed sessions that act as chat workspaces
         const chatSessions = (res.data.sessions || []).filter(s => 
           ['confirmed', 'completed'].includes(s.status)
         ).sort((a,b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
         
-        setSessions(chatSessions);
+        const seenPartners = new Set();
+        const deduplicated = [];
+        for (const s of chatSessions) {
+          const partnerId = s.teacher_id === user?.id ? s.learner_id : s.teacher_id;
+          if (!seenPartners.has(partnerId)) {
+            seenPartners.add(partnerId);
+            deduplicated.push(s);
+          }
+        }
+
+        setSessions(deduplicated);
       } catch (err) {
         console.error('Failed to load conversations:', err);
       } finally {

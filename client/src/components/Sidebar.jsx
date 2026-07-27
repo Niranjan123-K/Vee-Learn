@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Compass, Users, Calendar,
+  LayoutDashboard, Compass, BookOpen, Calendar,
   MessageCircle, Wallet, User
 } from 'lucide-react';
 import useChatStore from '../stores/chatStore';
@@ -10,7 +10,7 @@ import './Sidebar.css';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/explore', label: 'Explore', icon: Compass },
-  { path: '/match/all', label: 'Matches', icon: Users },
+  { path: '/learning', label: 'My Learning', icon: BookOpen },
   { path: '/sessions', label: 'Sessions', icon: Calendar },
   { path: '/messages', label: 'Messages', icon: MessageCircle, hasBadge: true },
   { path: '/ledger', label: 'Ledger', icon: Wallet },
@@ -37,7 +37,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path ||
-            (item.path === '/match/all' && location.pathname.startsWith('/match'));
+            (item.path === '/learning' && location.pathname.startsWith('/learning'));
 
           return (
             <NavLink
