@@ -2,6 +2,7 @@ import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import useAuthStore from './stores/authStore';
+import useThemeStore from './stores/themeStore';
 import { ToastProvider } from './components/ToastContext';
 
 // Components
@@ -20,7 +21,6 @@ const MyLearningPage = lazy(() => import('./pages/MyLearningPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const BookSessionPage = lazy(() => import('./pages/BookSessionPage'));
 const SessionsPage = lazy(() => import('./pages/SessionsPage'));
-const SessionChatPage = lazy(() => import('./pages/SessionChatPage'));
 const LedgerPage = lazy(() => import('./pages/LedgerPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
@@ -29,11 +29,16 @@ const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'));
 function App() {
   const fetchUser = useAuthStore(state => state.fetchUser);
   const isLoading = useAuthStore(state => state.isLoading);
+  const theme = useThemeStore(state => state.theme);
   const location = useLocation();
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   if (isLoading) {
     return <LearningAnimation />;
@@ -63,12 +68,11 @@ function App() {
             <Route path="/book/:teacherId" element={<Suspense fallback={<LearningAnimation />}><BookSessionPage /></Suspense>} />
             <Route path="/book/:teacherId/:skillId" element={<Suspense fallback={<LearningAnimation />}><BookSessionPage /></Suspense>} />
             <Route path="/sessions" element={<Suspense fallback={<LearningAnimation />}><SessionsPage /></Suspense>} />
-            <Route path="/sessions/:sessionId/chat" element={<Suspense fallback={<LearningAnimation />}><SessionChatPage /></Suspense>} />
             <Route path="/ledger" element={<Suspense fallback={<LearningAnimation />}><LedgerPage /></Suspense>} />
             <Route path="/messages" element={<Suspense fallback={<LearningAnimation />}><MessagesPage /></Suspense>} />
             <Route path="/messages/:userId" element={<Suspense fallback={<LearningAnimation />}><MessagesPage /></Suspense>} />
           </Route>
-          
+
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

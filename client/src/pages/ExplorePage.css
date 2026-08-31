@@ -16,13 +16,121 @@
   top: calc(var(--topbar-height) + var(--space-xl));
 }
 
-.explore-category-btn {
+/* ---------- Search Input & Clear ---------- */
+.explore-search-input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 8px 12px;
+}
+
+.explore-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.explore-search-input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 34px 8px 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  transition: all var(--transition-fast);
+}
+
+.explore-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-input-focus);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.explore-search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.explore-search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   background: transparent;
   border: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.explore-search-clear:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.explore-divider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: var(--space-xs) 0;
+}
+
+/* ---------- Available Courses Accordion ---------- */
+.courses-accordion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.courses-accordion-toggle:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.courses-accordion-toggle .accordion-icon {
+  color: var(--text-secondary);
+  transition: transform var(--transition-normal);
+}
+
+.courses-accordion-toggle.open .accordion-icon {
+  transform: rotate(180deg);
+  color: var(--text-primary);
+}
+
+.courses-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding-left: 2px;
+  overflow: hidden;
+}
+
+.course-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: var(--font-sm);
@@ -31,15 +139,32 @@
   cursor: pointer;
 }
 
-.explore-category-btn:hover {
+.course-item-btn:hover {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
 }
 
-.explore-category-btn.active {
-  background: var(--text-primary);
-  color: var(--bg-primary);
+.course-item-btn.active {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.course-item-count {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
   font-weight: 500;
+}
+
+.course-item-btn.active .course-item-count {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
 }
 
 
@@ -51,6 +176,7 @@
   flex-direction: column;
 }
 
+<<<<<<< Updated upstream
 .explore-results-header {
   display: flex;
   align-items: center;
@@ -156,6 +282,20 @@
 
 .flex-1 {
   flex: 1;
+=======
+.explore-top-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-card, none);
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-lg);
+>>>>>>> Stashed changes
 }
 
 /* ---------- Responsive ---------- */
@@ -172,7 +312,11 @@
 }
 
 @media (max-width: 768px) {
+<<<<<<< Updated upstream
   .explore-list {
+=======
+  .explore-grid {
+>>>>>>> Stashed changes
     grid-template-columns: 1fr;
   }
 }

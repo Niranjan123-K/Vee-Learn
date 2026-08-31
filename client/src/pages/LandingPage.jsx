@@ -62,8 +62,8 @@ export default function LandingPage() {
       <header className="landing-header">
         <div className="landing-header-inner">
           <div className="landing-logo">
-            <div className="sidebar-logo-icon" style={{ width: 32, height: 32 }}>
-              {/* Logo removed */}
+            <div className="hero-logo-container" style={{ width: 32, height: 32 }}>
+              <img src="/logo.png" alt="Vee Learn Logo" className="logo-dynamic" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Vee Learn</span>
           </div>
@@ -122,7 +122,7 @@ export default function LandingPage() {
               animate={{ y: [0, -15, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0 }}
             >
-              <Code size={24} style={{ color: '#60A5FA' }} />
+              <Code size={24} style={{ color: '#34D399' }} />
               <span>React.js</span>
             </motion.div>
             <motion.div 

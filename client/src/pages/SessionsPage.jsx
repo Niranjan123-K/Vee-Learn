@@ -4,7 +4,6 @@ import { Calendar, Video, Clock, MessageSquare, Check, X, Pencil, ArrowRight, Ac
 import api from '../utils/api';
 import useAuthStore from '../stores/authStore';
 import useChatStore from '../stores/chatStore';
-import ConfirmSessionModal from '../components/ConfirmSessionModal';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import { getInitials } from '../utils/formatters';
@@ -41,8 +40,8 @@ const SessionTimeline = ({ session }) => {
       {steps.map((step, i) => (
         <div key={step.label} className={`timeline-step ${step.completed ? 'completed' : ''} ${step.active ? 'active' : ''}`}>
           <div className="timeline-dot-wrapper">
-             <div className="timeline-dot" />
-             {i < steps.length - 1 && <div className="timeline-line" />}
+            <div className="timeline-dot" />
+            {i < steps.length - 1 && <div className="timeline-line" />}
           </div>
           <span className="timeline-label">{step.label}</span>
         </div>
@@ -55,16 +54,12 @@ export default function SessionsPage() {
   const user = useAuthStore(state => state.user);
   const navigate = useNavigate();
   const socket = useChatStore((s) => s.socket);
-  
+
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Confirm Modal state
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmSessionId, setConfirmSessionId] = useState(null);
 
   // Time tracker for real-time countdowns
   useEffect(() => {
@@ -74,7 +69,7 @@ export default function SessionsPage() {
 
   useEffect(() => {
     fetchSessions();
-    
+
     if (socket) {
       const handleUpdate = () => fetchSessions();
       socket.on('session_update', handleUpdate);
@@ -94,17 +89,13 @@ export default function SessionsPage() {
   };
 
   const handleAction = async (id, action) => {
-    if (action === 'confirm') {
-      setConfirmSessionId(id);
-      setShowConfirmModal(true);
-      return;
-    }
-
     try {
-      if (action === 'cancel') {
+      if (action === 'confirm') {
+        if (!window.confirm('Are you sure you want to confirm this session? A Jitsi room will be auto-generated.')) return;
+      } else if (action === 'cancel') {
         if (!window.confirm('Are you sure you want to cancel this session?')) return;
       }
-      
+
       await api.put(`/sessions/${id}/${action}`);
       await fetchSessions();
     } catch (err) {
@@ -113,31 +104,50 @@ export default function SessionsPage() {
     }
   };
 
-  const renderCountdown = (scheduledAtStr) => {
+  const handleJoin = async (id) => {
+    try {
+      const res = await api.get(`/sessions/${id}/join`);
+      if (res.data.joinUrl) {
+        window.open(res.data.joinUrl, '_blank');
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Cannot join session at this time.');
+    }
+  };
+
+  const renderCountdown = (scheduledAtStr, durationMins = 60) => {
     const scheduledAt = new Date(scheduledAtStr);
+    const endAt = new Date(scheduledAt.getTime() + durationMins * 60000);
     const diffMs = scheduledAt - currentTime;
+<<<<<<< Updated upstream
     
     if (diffMs <= 0) return <span style={{ fontWeight: 700 }}>In Progress</span>;
     
+=======
+
+    if (currentTime > endAt) return <span className="text-danger" style={{ fontWeight: 600 }}>Expired</span>;
+    if (diffMs <= 0) return <span className="text-success" style={{ fontWeight: 600 }}>In Progress</span>;
+
+>>>>>>> Stashed changes
     const diffMins = Math.floor(diffMs / 60000);
     const hours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
-    
+
     if (hours > 24) {
       const days = Math.floor(hours / 24);
       return `Starts in ${days} day${days > 1 ? 's' : ''}`;
     }
-    
+
     if (hours > 0) return `Starts in ${hours}h ${mins}m`;
     return `Starts in ${mins}m`;
   };
 
   const isMeetingReady = (scheduledAtStr) => {
     const scheduledAt = new Date(scheduledAtStr);
-    const tenMinsBefore = new Date(scheduledAt.getTime() - 10 * 60000);
-    return currentTime >= tenMinsBefore;
+    const fifteenMinsBefore = new Date(scheduledAt.getTime() - 15 * 60000);
+    return currentTime >= fifteenMinsBefore;
   };
-  
+
   const isMeetingPassed = (scheduledAtStr, durationMins) => {
     const endAt = new Date(new Date(scheduledAtStr).getTime() + (durationMins || 60) * 60000);
     return currentTime > endAt;
@@ -148,18 +158,24 @@ export default function SessionsPage() {
 
   const filteredSessions = (activeTab === 'upcoming' ? upcomingSessions : pastSessions).filter(s => {
     const partnerName = s.teacher_id === user?.id ? s.learner_name : s.teacher_name;
+<<<<<<< Updated upstream
     return (partnerName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
            (s.skill_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+=======
+    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
+>>>>>>> Stashed changes
   });
 
   return (
     <div className="page-container fade-in">
-      <PageHeader 
+      <PageHeader
         breadcrumb={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'My Sessions' }]}
         title="My Sessions"
         description="View and coordinate your learning appointments, video classrooms, and session timeline."
       />
 
+<<<<<<< Updated upstream
       {/* Structured Filter & Search Strip */}
       <div className="sessions-filter-card">
         <div className="sessions-filter-pills">
@@ -186,6 +202,38 @@ export default function SessionsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+=======
+      <div className="card mb-xl">
+        <div className="card-body" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div className="tabs" style={{ borderBottom: 'none' }}>
+            <button
+              className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upcoming')}
+              style={{ padding: '4px 12px', fontSize: 'var(--font-xs)' }}
+            >
+              Upcoming ({upcomingSessions.length})
+            </button>
+            <button
+              className={`tab ${activeTab === 'past' ? 'active' : ''}`}
+              onClick={() => setActiveTab('past')}
+              style={{ padding: '4px 12px', fontSize: 'var(--font-xs)' }}
+            >
+              History ({pastSessions.length})
+            </button>
+          </div>
+
+          <div className="search-input-wrapper" style={{ width: '240px' }}>
+            <Search size={14} className="search-icon" style={{ left: '12px' }} />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Search sessions..."
+              style={{ paddingLeft: '32px', fontSize: 'var(--font-xs)', padding: '6px 32px' }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+>>>>>>> Stashed changes
         </div>
       </div>
 
@@ -204,6 +252,7 @@ export default function SessionsPage() {
             const partnerAvatar = isTeacher ? session.learner_avatar : session.teacher_avatar;
             const isReady = isMeetingReady(session.scheduled_at);
             const isPassed = isMeetingPassed(session.scheduled_at, session.duration_minutes);
+<<<<<<< Updated upstream
             const costCredits = Math.ceil(session.duration_minutes / 60);
             
             return (
@@ -212,6 +261,15 @@ export default function SessionsPage() {
                 {/* 1. Header Tier: Who & What */}
                 <div className="session-card-header">
                   <div className="session-header-left">
+=======
+
+            return (
+              <div key={session.id} className="card session-card">
+
+                {/* 1. Participant */}
+                <div className="session-section participant-section">
+                  <div className="avatar-wrapper">
+>>>>>>> Stashed changes
                     {partnerAvatar ? (
                       <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-lg" />
                     ) : (
@@ -230,6 +288,7 @@ export default function SessionsPage() {
                       </p>
                     </div>
                   </div>
+<<<<<<< Updated upstream
                   
                   <div className="session-header-right">
                     <div className="session-cost-badge">
@@ -337,6 +396,99 @@ export default function SessionsPage() {
                       </button>
                     )}
                   </div>
+=======
+                  <div className="participant-info">
+                    <h3 className="session-skill truncate">{session.skill_name}</h3>
+                    <p className="session-partner truncate">with {partnerName}</p>
+                    <button
+                      className="btn-ghost btn-xs mt-sm"
+                      onClick={() => navigate(`/profile/${isTeacher ? session.learner_id : session.teacher_id}`)}
+                    >
+                      <User size={12} /> View Profile
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Logistics */}
+                <div className="session-section logistics-section">
+                  <div className="logistics-row">
+                    <Calendar size={14} className="text-muted" />
+                    <span>{new Date(session.scheduled_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <div className="logistics-row">
+                    <Clock size={14} className="text-muted" />
+                    <span>{new Date(session.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="logistics-row">
+                    <Activity size={14} className="text-muted" />
+                    <span>{session.duration_minutes} min</span>
+                  </div>
+                  <div className="logistics-row mt-sm">
+                    <span className="text-xs text-secondary uppercase font-semibold">Cost</span>
+                    <span className="text-warning font-semibold">{Math.ceil(session.duration_minutes / 60)} Credit{Math.ceil(session.duration_minutes / 60) > 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+
+                {/* 3. Status Timeline */}
+                <div className="session-section status-section">
+                  <div className="status-header">
+                    <span className="text-xs text-secondary uppercase font-semibold">Status Lifecycle</span>
+                    {['pending', 'confirmed'].includes(session.status) && (
+                      <span className="countdown-badge">{renderCountdown(session.scheduled_at, session.duration_minutes)}</span>
+                    )}
+                  </div>
+                  <SessionTimeline session={session} />
+                </div>
+
+                {/* 4. Actions */}
+                <div className="session-section actions-section">
+                  {['pending', 'confirmed'].includes(session.status) && isPassed ? (
+                    <div className="action-group" style={{ flexDirection: 'column', gap: '8px' }}>
+                      <p className="text-muted text-sm text-center">Session timeframe has passed.</p>
+                      <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
+                        <MessageSquare size={16} /> Open Workspace
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {session.status === 'pending' && isTeacher && (
+                        <button className="btn-success w-full" onClick={() => handleAction(session.id, 'confirm')}>
+                          <Check size={16} /> Confirm Request
+                        </button>
+                      )}
+
+                      {session.status === 'confirmed' && (
+                        <div className="action-group">
+                          <button
+                            className={`btn-primary w-full ${!isReady ? 'disabled' : ''}`}
+                            onClick={(e) => {
+                              if (!isReady) e.preventDefault();
+                              else handleJoin(session.id);
+                            }}
+                          >
+                            <Video size={16} /> {isReady ? 'Join Meeting' : 'Join available 15m before'}
+                          </button>
+
+                          <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
+                            <MessageSquare size={16} /> Open Workspace
+                          </button>
+                        </div>
+                      )}
+
+                      {['pending', 'confirmed'].includes(session.status) && (
+                        <button className="btn-ghost btn-xs cancel-btn" onClick={() => handleAction(session.id, 'cancel')}>
+                          <X size={14} /> Cancel Session
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {session.status === 'completed' && (
+                    <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
+                      View Workspace <ArrowRight size={14} />
+                    </button>
+                  )}
+>>>>>>> Stashed changes
                 </div>
 
               </div>
@@ -344,28 +496,13 @@ export default function SessionsPage() {
           })}
         </div>
       ) : (
-        <EmptyState 
+        <EmptyState
           icon={Calendar}
           title={activeTab === 'upcoming' ? 'No upcoming sessions found' : 'No past session history'}
           description={activeTab === 'upcoming' ? "You don't have any scheduled sessions or pending requests at the moment." : "You haven't completed or cancelled any sessions yet."}
           action={activeTab === 'upcoming' ? { label: 'Explore Teachers & Schedule Class', to: '/explore' } : undefined}
         />
       )}
-
-      <ConfirmSessionModal 
-        isOpen={showConfirmModal}
-        onClose={() => {
-          setShowConfirmModal(false);
-          setConfirmSessionId(null);
-        }}
-        sessionId={confirmSessionId}
-        onSuccess={() => {
-          setShowConfirmModal(false);
-          setConfirmSessionId(null);
-          fetchSessions();
-        }}
-        existingLink={sessions.find(s => s.id === confirmSessionId)?.meeting_link}
-      />
     </div>
   );
 }

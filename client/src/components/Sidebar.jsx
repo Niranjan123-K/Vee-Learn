@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Compass, BookOpen, Calendar,
@@ -18,16 +18,17 @@ const navItems = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { unreadCount } = useChatStore();
 
   return (
     <aside className="sidebar-container">
-      <div className="sidebar-header">
+      <div className="sidebar-header" style={{ cursor: 'pointer' }} onClick={() => navigate('/about')} title="About Vee Learn">
         <div className="sidebar-logo-icon">
-          {/* Logo removed */}
+          <img src="/logo.png" alt="Vee Learn Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
         </div>
         {!collapsed && (
-          <span className="sidebar-logo-text">
+          <span className="sidebar-logo-text hero-logo">
             Vee Learn
           </span>
         )}

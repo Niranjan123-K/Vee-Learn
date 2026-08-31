@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+<<<<<<< Updated upstream
 import { 
   Clock, Calendar, Users, ChevronRight, Compass, ArrowRight, 
   Zap, Check, X, MessageSquare, Star, BookOpen, 
+=======
+import {
+  Clock, Calendar, Users, ChevronRight, Compass, ArrowRight,
+  Zap, CheckCircle, XCircle, MessageSquare, Star, BookOpen,
+>>>>>>> Stashed changes
   CalendarCheck, MessageCircle, Wallet, ArrowUpRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -16,7 +22,7 @@ import './DashboardPage.css';
 export default function DashboardPage() {
   const user = useAuthStore(state => state.user);
   const navigate = useNavigate();
-  
+
   const [sessions, setSessions] = useState([]);
   const [mySkills, setMySkills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,14 +46,14 @@ export default function DashboardPage() {
   }, [user]);
 
   const tokens = user?.credit_balance || 0;
-  
+
   const completedSessions = sessions.filter(s => s.status === 'completed');
-  const totalHours = completedSessions.length; 
-  
-  const recentActivity = sessions.filter(s => s.status === 'completed' || s.status === 'cancelled').sort((a,b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt)).slice(0, 4);
+  const totalHours = completedSessions.length;
+
+  const recentActivity = sessions.filter(s => s.status === 'completed' || s.status === 'cancelled').sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt)).slice(0, 4);
   const pendingRequests = sessions.filter(s => s.status === 'pending');
-  const upcomingSessions = sessions.filter(s => s.status === 'confirmed').sort((a,b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-  
+  const upcomingSessions = sessions.filter(s => s.status === 'confirmed').sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+
   const today = new Date();
   const todaySessions = upcomingSessions.filter(s => {
     const d = new Date(s.scheduled_at);
@@ -60,7 +66,7 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container fade-in">
-      <PageHeader 
+      <PageHeader
         variant="dashboard"
         title={`Welcome back, ${user?.name?.split(' ')[0] || 'User'}`}
         subtitle="Here's what's happening today."
@@ -69,13 +75,13 @@ export default function DashboardPage() {
 
       {loading ? (
         <div className="dashboard-grid">
-           <div className="skeleton" style={{height: '140px', gridColumn: 'span 4'}} />
-           <div className="skeleton" style={{height: '300px', gridColumn: 'span 2'}} />
-           <div className="skeleton" style={{height: '300px', gridColumn: 'span 2'}} />
+          <div className="skeleton" style={{ height: '140px', gridColumn: 'span 4' }} />
+          <div className="skeleton" style={{ height: '300px', gridColumn: 'span 2' }} />
+          <div className="skeleton" style={{ height: '300px', gridColumn: 'span 2' }} />
         </div>
       ) : (
         <div className="dashboard-grid">
-          
+
           {/* STATS ROW */}
           <div className="dash-stats-row fade-up-stagger stagger-1">
             <StatsCard icon={BookOpen} label="Hours Learned" value={totalHours} trend="up" trendValue="12" index={0} />
@@ -102,19 +108,19 @@ export default function DashboardPage() {
                     const isTeacher = session.teacher_id === user.id;
                     const partnerName = isTeacher ? session.learner_name : session.teacher_name;
                     const partnerAvatar = isTeacher ? session.learner_avatar : session.teacher_avatar;
-                    
+
                     return (
-                      <div key={session.id} className="dash-list-item" onClick={() => navigate(`/sessions/${session.id}/chat`)}>
-                         <div className="dash-item-avatar">
-                            {partnerAvatar ? <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-md" /> : <div className="avatar-fallback avatar-md">{getInitials(partnerName)}</div>}
-                         </div>
-                         <div className="dash-item-content">
-                           <p className="dash-item-title">{session.skill_name}</p>
-                           <p className="dash-item-desc">with {partnerName}</p>
-                         </div>
-                         <div className="dash-item-meta">
-                           <p className="dash-item-time">{new Date(session.scheduled_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                         </div>
+                      <div key={session.id} className="dash-list-item" onClick={() => navigate(`/messages/${session.id}`)}>
+                        <div className="dash-item-avatar">
+                          {partnerAvatar ? <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-md" /> : <div className="avatar-fallback avatar-md">{getInitials(partnerName)}</div>}
+                        </div>
+                        <div className="dash-item-content">
+                          <p className="dash-item-title">{session.skill_name}</p>
+                          <p className="dash-item-desc">with {partnerName}</p>
+                        </div>
+                        <div className="dash-item-meta">
+                          <p className="dash-item-time">{new Date(session.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                       </div>
                     );
                   })}
@@ -135,10 +141,10 @@ export default function DashboardPage() {
 
           {/* MAIN TWO COLUMNS */}
           <div className="dash-main-cols">
-            
+
             {/* LEFT COLUMN */}
             <div className="dash-col">
-              
+
               {/* PRIORITY 2: Pending Requests */}
               <div className="card fade-up-stagger stagger-3">
                 <div className="card-header">
@@ -156,9 +162,10 @@ export default function DashboardPage() {
                       {pendingRequests.slice(0, 3).map(session => {
                         const isTeacher = session.teacher_id === user.id;
                         const partnerName = isTeacher ? session.learner_name : session.teacher_name;
-                        
+
                         return (
                           <div key={session.id} className="dash-list-item" onClick={() => navigate('/sessions')}>
+<<<<<<< Updated upstream
                              <div className="dash-item-icon">
                                <Clock size={20} />
                              </div>
@@ -169,6 +176,18 @@ export default function DashboardPage() {
                              <div className="dash-item-meta">
                                <p className="dash-item-time">Today</p>
                              </div>
+=======
+                            <div className="dash-item-icon">
+                              <Clock size={18} className="text-warning" />
+                            </div>
+                            <div className="dash-item-content">
+                              <p className="dash-item-title">{partnerName}</p>
+                              <p className="dash-item-desc">{isTeacher ? `Requested ${session.skill_name}` : `Awaiting ${session.skill_name}`}</p>
+                            </div>
+                            <div className="dash-item-meta">
+                              <p className="dash-item-time">Today</p>
+                            </div>
+>>>>>>> Stashed changes
                           </div>
                         );
                       })}
@@ -178,7 +197,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              
+
               {/* PRIORITY 3: Recent Activity */}
               <div className="card fade-up-stagger stagger-4">
                 <div className="card-header">
@@ -194,6 +213,7 @@ export default function DashboardPage() {
                   {recentActivity.length > 0 ? (
                     <div className="dash-list">
                       {recentActivity.slice(0, 3).map(session => {
+<<<<<<< Updated upstream
                          const isCompleted = session.status === 'completed';
                          return (
                            <div key={session.id} className="dash-list-item">
@@ -209,6 +229,23 @@ export default function DashboardPage() {
                               </div>
                            </div>
                          );
+=======
+                        const isCompleted = session.status === 'completed';
+                        return (
+                          <div key={session.id} className="dash-list-item">
+                            <div className="dash-item-icon">
+                              {isCompleted ? <CheckCircle size={18} className="text-success" /> : <XCircle size={18} className="text-danger" />}
+                            </div>
+                            <div className="dash-item-content">
+                              <p className="dash-item-title">{isCompleted ? 'Session Completed' : 'Session Cancelled'}</p>
+                              <p className="dash-item-desc">{session.skill_name}</p>
+                            </div>
+                            <div className="dash-item-meta">
+                              <p className="dash-item-date">{new Date(session.updated_at || session.updatedAt || session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+                            </div>
+                          </div>
+                        );
+>>>>>>> Stashed changes
                       })}
                     </div>
                   ) : (
@@ -221,7 +258,7 @@ export default function DashboardPage() {
 
             {/* RIGHT COLUMN */}
             <div className="dash-col">
-              
+
               {/* PRIORITY 4: Quick Actions */}
               <div className="card fade-up-stagger stagger-5">
                 <div className="card-header">
@@ -234,7 +271,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="card-body card-body-compact">
                   <div className="quick-actions-grid">
-                    
+
                     <div className="qa-tile" onClick={() => navigate('/explore')}>
                       <div className="qa-icon-wrapper">
                         <BookOpen size={20} />
@@ -278,9 +315,9 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Extra Active Conversations to maintain symmetry if needed */}
-              <div className="card fade-up-stagger stagger-5" style={{animationDelay: '600ms'}}>
+              <div className="card fade-up-stagger stagger-5" style={{ animationDelay: '600ms' }}>
                 <div className="card-header">
                   <div className="card-header-left">
                     <h3 className="card-header-title">
@@ -297,19 +334,19 @@ export default function DashboardPage() {
                         const isTeacher = session.teacher_id === user.id;
                         const partnerName = isTeacher ? session.learner_name : session.teacher_name;
                         const partnerAvatar = isTeacher ? session.learner_avatar : session.teacher_avatar;
-                        
+
                         return (
-                          <div key={session.id} className="dash-list-item" onClick={() => navigate(`/sessions/${session.id}/chat`)}>
-                             <div className="dash-item-avatar">
-                                {partnerAvatar ? <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-md" /> : <div className="avatar-fallback avatar-md">{getInitials(partnerName)}</div>}
-                             </div>
-                             <div className="dash-item-content">
-                               <p className="dash-item-title">{partnerName}</p>
-                               <p className="dash-item-desc">Active workspace for {session.skill_name}</p>
-                             </div>
-                             <div className="dash-item-meta">
-                               <ArrowUpRight size={16} className="text-muted" />
-                             </div>
+                          <div key={session.id} className="dash-list-item" onClick={() => navigate(`/messages/${session.id}`)}>
+                            <div className="dash-item-avatar">
+                              {partnerAvatar ? <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-md" /> : <div className="avatar-fallback avatar-md">{getInitials(partnerName)}</div>}
+                            </div>
+                            <div className="dash-item-content">
+                              <p className="dash-item-title">{partnerName}</p>
+                              <p className="dash-item-desc">Active workspace for {session.skill_name}</p>
+                            </div>
+                            <div className="dash-item-meta">
+                              <ArrowUpRight size={16} className="text-muted" />
+                            </div>
                           </div>
                         );
                       })}

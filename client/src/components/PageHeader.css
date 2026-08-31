@@ -50,6 +50,7 @@
 }
 
 .page-header-title {
+  font-family: 'Source Sans 3', sans-serif;
   font-size: var(--font-2xl);
   font-weight: 600;
   color: var(--text-primary);

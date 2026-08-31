@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-lg);
-  background: var(--bg-primary);
+  background: var(--navbar-bg);
   border-bottom: 1px solid var(--border-primary);
   z-index: 90;
   transition: left var(--transition-slow);
@@ -83,8 +83,15 @@
   border: 1px solid var(--border-strong, var(--border-primary));
   border-radius: var(--radius-sm);
   color: var(--text-primary);
+<<<<<<< Updated upstream
   font-size: var(--font-sm);
   transition: all var(--transition-fast);
+=======
+  background: var(--bg-card);
+  border-color: var(--accent);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1), 0 0 0 3px var(--accent-muted), 0 4px 15px rgba(16, 185, 129, 0.2);
+  cursor: text;
+>>>>>>> Stashed changes
 }
 
 .navbar-search .search-input::placeholder {
@@ -378,4 +385,59 @@
   .hide-on-desktop {
     display: none !important;
   }
+}
+
+/* ─── Hero Logo ─────────────────── */
+.hero-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-shadow: 
+    -1.5px 0 0 #0ea5e9,
+    1.5px 0 0 #f97316;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform var(--transition-fast);
+  letter-spacing: -0.02em;
+}
+
+.hero-logo:hover {
+  transform: scale(1.05);
+}
+
+.app-info-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  width: 320px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  z-index: 200;
+  box-shadow: var(--shadow-xl);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  cursor: default;
+}
+
+.app-info-panel h4 {
+  margin: 0 0 8px 0;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.app-info-panel p {
+  margin: 0 0 12px 0;
+}
+
+.app-info-panel ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.app-info-panel li {
+  margin-bottom: 6px;
 }

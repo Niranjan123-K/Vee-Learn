@@ -60,7 +60,7 @@ const profiles = {
     location: 'Chennai, India',
     availability: 'Anytime'
   },
-  'jarvis@gamil.com': {
+  'jarvis@gmail.com': {
     bio: 'AI Assistant, ready to help you with anything.',
     experience_level: 'expert',
     location: 'Cloud',
@@ -96,7 +96,7 @@ async function run() {
   } catch (err) {
     console.error(err);
   } finally {
-    pool.end();
+    await pool.end();
   }
 }
 

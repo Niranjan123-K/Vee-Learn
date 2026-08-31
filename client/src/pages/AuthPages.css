@@ -141,13 +141,13 @@
 }
 
 .auth-link {
-  color: var(--accent-primary-light);
+  color: var(--accent);
   font-weight: 600;
   transition: color var(--transition-fast);
 }
 
 .auth-link:hover {
-  color: var(--accent-secondary);
+  color: var(--accent-hover);
 }
 
 /* Register multi-step */

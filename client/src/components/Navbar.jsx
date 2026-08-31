@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+<<<<<<< Updated upstream
 import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, BookOpen, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search } from 'lucide-react';
+=======
+import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, Users, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search, Sun, Moon } from 'lucide-react';
+>>>>>>> Stashed changes
 import useAuthStore from '../stores/authStore';
+import useThemeStore from '../stores/themeStore';
 import useNotificationStore from '../stores/notificationStore';
 import api from '../utils/api';
 import CreditBadge from './CreditBadge';
@@ -26,6 +31,7 @@ const notifColors = {
 export default function Navbar({ onToggleSidebar }) {
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
+  const { theme, toggleTheme } = useThemeStore();
   const notifications = useNotificationStore((s) => s.notifications);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
   const resolveNotification = useNotificationStore((s) => s.resolveNotification);
@@ -81,9 +87,9 @@ export default function Navbar({ onToggleSidebar }) {
   const handleNotifClick = (notif) => {
     setShowNotifPanel(false);
     if (notif.session && notif.type !== 'session_new') {
-        navigate(`/sessions/${notif.session.id}/chat`);
+      navigate(`/messages/${notif.session.id}`);
     } else {
-        navigate('/sessions');
+      navigate('/sessions');
     }
   };
 
@@ -95,7 +101,7 @@ export default function Navbar({ onToggleSidebar }) {
       await api.put(`/sessions/${notif.session.id}/confirm`);
       resolveNotification(notif.id);
       setShowNotifPanel(false);
-      navigate(`/sessions/${notif.session.id}/chat`);
+      navigate(`/messages/${notif.session.id}`);
     } catch (err) {
       console.error('Failed to accept request', err);
     } finally {
@@ -129,24 +135,25 @@ export default function Navbar({ onToggleSidebar }) {
       <nav className="navbar-top">
         <div className="navbar-left">
           <button className="btn-icon hide-on-mobile" onClick={onToggleSidebar} aria-label="Toggle Sidebar">
-             <Menu size={18} />
+            <Menu size={18} />
           </button>
-          
+
           <div className="navbar-breadcrumb hide-on-mobile">
-            <span className="text-muted" style={{fontSize: 'var(--font-sm)', fontWeight: 500}}>Vee Learn</span>
-            <span className="text-muted" style={{margin: '0 8px'}}>/</span>
-            <span className="text-primary" style={{fontSize: 'var(--font-sm)', fontWeight: 500}}>
-               {location.pathname === '/dashboard' ? 'Dashboard' : 
+            <span className="text-muted" style={{ fontSize: 'var(--font-sm)', fontWeight: 500 }}>Vee Learn</span>
+            <span className="text-muted" style={{ margin: '0 8px' }}>/</span>
+            <span className="text-primary" style={{ fontSize: 'var(--font-sm)', fontWeight: 500 }}>
+              {location.pathname === '/dashboard' ? 'Dashboard' :
                 location.pathname.startsWith('/explore') ? 'Explore' :
-                location.pathname.startsWith('/match') ? 'Matches' :
-                location.pathname.startsWith('/sessions') ? 'My Sessions' :
-                location.pathname.startsWith('/messages') ? 'Messages' :
-                location.pathname.startsWith('/ledger') ? 'Ledger' :
-                location.pathname.startsWith('/profile') ? 'Profile' : 'App'}
+                  location.pathname.startsWith('/match') ? 'Matches' :
+                    location.pathname.startsWith('/sessions') ? 'My Sessions' :
+                      location.pathname.startsWith('/messages') ? 'Messages' :
+                        location.pathname.startsWith('/ledger') ? 'Ledger' :
+                          location.pathname.startsWith('/profile') ? 'Profile' : 'App'}
             </span>
           </div>
 
-          <NavLink to="/dashboard" className="navbar-logo show-on-mobile">
+          <NavLink to="/dashboard" className="navbar-logo show-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/logo.png" alt="Logo" className="logo-dynamic" style={{ width: '24px', height: '24px' }} />
             Vee Learn
           </NavLink>
         </div>
@@ -158,6 +165,7 @@ export default function Navbar({ onToggleSidebar }) {
             style={{ cursor: 'pointer' }}
           >
             <Search size={16} className="search-icon" />
+<<<<<<< Updated upstream
             <div className="form-input search-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
               <span>Search everywhere...</span>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -166,9 +174,28 @@ export default function Navbar({ onToggleSidebar }) {
               </div>
             </div>
           </div>
+=======
+            <input
+              type="text"
+              className="form-input search-input"
+              placeholder="Search skills or names..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
+>>>>>>> Stashed changes
         </div>
 
         <div className="navbar-right">
+          <button
+            className="btn-icon"
+            onClick={toggleTheme}
+            aria-label="Toggle Theme"
+            style={{ marginRight: '4px' }}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           <NavLink to="/ledger" style={{ textDecoration: 'none' }} className="hide-on-mobile">
             <CreditBadge amount={user?.credit_balance ?? 0} size="sm" />
           </NavLink>
@@ -216,22 +243,22 @@ export default function Navbar({ onToggleSidebar }) {
                           <p className="notif-item-title">{notif.title}</p>
                           <p className="notif-item-msg">{notif.message}</p>
                           <span className="notif-item-time">{formatRelativeTime(notif.timestamp)}</span>
-                          
+
                           {notif.type === 'session_new' && notif.session?.teacher_id === user?.id && !notif.resolved && (
                             <div className="notif-handshake-actions">
-                              <button 
+                              <button
                                 className="btn-success btn-xs"
                                 onClick={(e) => handleAcceptRequest(e, notif)}
                                 disabled={loadingAction === notif.id + 'accept'}
-                                style={{flex: 1}}
+                                style={{ flex: 1 }}
                               >
                                 {loadingAction === notif.id + 'accept' ? 'Accepting...' : 'Accept'}
                               </button>
-                              <button 
+                              <button
                                 className="btn-danger btn-xs"
                                 onClick={(e) => handleDeclineRequest(e, notif)}
                                 disabled={loadingAction === notif.id + 'decline'}
-                                style={{flex: 1}}
+                                style={{ flex: 1 }}
                               >
                                 {loadingAction === notif.id + 'decline' ? 'Declining...' : 'Decline'}
                               </button>
@@ -271,9 +298,9 @@ export default function Navbar({ onToggleSidebar }) {
 
             {showDropdown && (
               <div className="navbar-dropdown">
-                <div style={{padding: '12px 14px', borderBottom: '1px solid var(--border-primary)', marginBottom: '4px'}}>
-                   <p style={{fontWeight: 600, fontSize: 'var(--font-sm)', margin: 0, color: 'var(--text-primary)'}}>{user?.name}</p>
-                   <p style={{fontSize: 'var(--font-xs)', margin: 0, color: 'var(--text-muted)'}}>{user?.email}</p>
+                <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-primary)', marginBottom: '4px' }}>
+                  <p style={{ fontWeight: 600, fontSize: 'var(--font-sm)', margin: 0, color: 'var(--text-primary)' }}>{user?.name}</p>
+                  <p style={{ fontSize: 'var(--font-xs)', margin: 0, color: 'var(--text-muted)' }}>{user?.email}</p>
                 </div>
                 <button
                   className="navbar-dropdown-item"
@@ -316,8 +343,13 @@ export default function Navbar({ onToggleSidebar }) {
           <NavLink
             key={item.path}
             to={item.path}
+<<<<<<< Updated upstream
             className={({ isActive }) => 
               `tab-link ${isActive || (item.path === '/learning' && location.pathname.startsWith('/learning')) ? 'active' : ''}`
+=======
+            className={({ isActive }) =>
+              `tab-link ${isActive || (item.path === '/match/all' && location.pathname.startsWith('/match')) ? 'active' : ''}`
+>>>>>>> Stashed changes
             }
           >
             <item.icon size={24} />

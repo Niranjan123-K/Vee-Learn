@@ -25,11 +25,54 @@
   flex-shrink: 0;
 }
 
+<<<<<<< Updated upstream
 .hero-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 12px;
+=======
+.profile-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex-grow: 1;
+}
+
+.profile-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.profile-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+>>>>>>> Stashed changes
 }
 
 .hero-avatar-fallback {
@@ -44,6 +87,7 @@
   border-radius: 12px;
 }
 
+<<<<<<< Updated upstream
 .verified-badge {
   position: absolute;
   bottom: 12px;
@@ -60,6 +104,100 @@
   gap: 6px;
   letter-spacing: 0.05em;
   white-space: nowrap;
+=======
+.profile-bio {
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 600px;
+  line-height: var(--leading-relaxed);
+}
+
+.profile-stats-row {
+  display: flex;
+  gap: var(--space-2xl);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-primary);
+}
+
+.profile-stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.profile-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+}
+
+.profile-stat-icon.status-icon { color: var(--warning); background: var(--warning-muted); }
+.profile-stat-icon.sessions-icon { color: var(--success); background: var(--success-muted); }
+.profile-stat-icon.member-icon { color: var(--text-secondary); background: var(--bg-elevated); }
+
+.profile-stat-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.profile-stat-value {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ---------- Empty States ---------- */
+.skills-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-2xl) var(--space-md);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-primary);
+}
+
+.skills-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+.skills-empty-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.skills-empty-desc {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  max-width: 320px;
+  margin-bottom: var(--space-lg);
+>>>>>>> Stashed changes
 }
 
 .profile-hero-details {

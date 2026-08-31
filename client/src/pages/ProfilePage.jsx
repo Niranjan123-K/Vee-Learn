@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+<<<<<<< Updated upstream
 import { Star, Shield, Clock, BookOpen, User, BookMarked, Award, CheckCircle, GraduationCap, ChevronLeft, ChevronRight, Globe, Zap, Users, Edit3, X, Upload } from 'lucide-react';
+=======
+import { Star, Shield, Clock, BookOpen, User, BookMarked, Award, Camera, Link, Calendar, Plus, GraduationCap, Target, Trash2, X } from 'lucide-react';
+>>>>>>> Stashed changes
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import useAuthStore from '../stores/authStore';
 import PageHeader from '../components/PageHeader';
+import EditProfileModal from '../components/EditProfileModal';
+import AddSkillModal from '../components/AddSkillModal';
 import { getInitials } from '../utils/formatters';
 import './ProfilePage.css';
 
@@ -20,6 +26,59 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isAddSkillOpen, setIsAddSkillOpen] = useState(false);
+  const [addSkillType, setAddSkillType] = useState('teach');
+
+  const handleAvatarClick = () => {
+    if (isOwnProfile && !uploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('dp', file);
+
+    try {
+      const res = await api.post('/users/upload/dp', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const newAvatarUrl = res.data.url;
+      setProfileData(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+      // Optional: update the user in the global store so the navbar updates immediately
+      const currentUserData = useAuthStore.getState().user;
+      if (currentUserData) {
+        useAuthStore.setState({ user: { ...currentUserData, avatar_url: newAvatarUrl } });
+      }
+    } catch (err) {
+      console.error('Failed to upload picture:', err);
+      alert('Failed to upload profile picture.');
+    } finally {
+      setUploading(false);
+      // Reset input so the same file can be selected again if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get(`/users/${profileId}`);
+      setProfileData(res.data.user || res.data);
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+      setError('Could not load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -32,19 +91,19 @@ export default function ProfilePage() {
   const [selectedDate, setSelectedDate] = useState(1);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get(`/users/${profileId}`);
-        setProfileData(res.data.user || res.data);
-      } catch (err) {
-        console.error('Failed to fetch profile:', err);
-        setError('Could not load profile');
-      } finally {
-        setLoading(false);
-      }
-    };
     if (profileId) fetchProfile();
   }, [profileId]);
+
+  const handleDeleteSkill = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this skill?')) return;
+    try {
+      await api.delete(`/skills/user-skills/${id}`);
+      fetchProfile();
+    } catch (err) {
+      console.error('Failed to delete skill:', err);
+      alert('Failed to delete skill.');
+    }
+  };
 
   if (loading) {
     return (
@@ -67,11 +126,17 @@ export default function ProfilePage() {
   }
 
   const {
+<<<<<<< Updated upstream
     name, bio, avatar, averageRating, review_count, total_sessions,
     title, department, education, hourly_rate, languages, custom_availability,
+=======
+    name, bio, avatar, avatar_url, averageRating,
+>>>>>>> Stashed changes
     skills = [],
     sessionsCompleted = 0
   } = profileData;
+
+  const displayAvatar = avatar_url || avatar;
 
   const teaching_skills = skills.filter(s => s.type === 'teach');
 
@@ -134,6 +199,7 @@ export default function ProfilePage() {
     <div className="page-container fade-in">
       <PageHeader breadcrumb={getBreadcrumb()} />
       
+<<<<<<< Updated upstream
       <div className="profile-hero-modern">
         <div className="profile-hero-image-wrapper">
           {avatar ? (
@@ -143,9 +209,83 @@ export default function ProfilePage() {
           )}
           <div className="verified-badge">
             <CheckCircle size={16} /> VERIFIED EXPERT
+=======
+      <div className="profile-hero card">
+        <div className="profile-hero-content">
+          <div className="profile-avatar-container" style={{ position: 'relative' }}>
+            <div 
+              className="profile-avatar-large" 
+              style={{ cursor: isOwnProfile ? 'pointer' : 'default' }}
+              onClick={handleAvatarClick}
+            >
+               {displayAvatar ? <img src={displayAvatar} alt={name} /> : <div className="avatar-fallback" style={{width:'100%', height:'100%', fontSize:'var(--font-3xl)'}}>{getInitials(name)}</div>}
+            </div>
+            {isOwnProfile && (
+              <div className="avatar-upload-overlay" style={{
+                position: 'absolute', bottom: '4px', right: '4px', 
+                background: 'var(--accent)', color: 'white',
+                borderRadius: '50%', padding: '8px', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                opacity: uploading ? 0.5 : 1,
+                pointerEvents: 'none',
+                zIndex: 10
+              }}>
+                <Camera size={20} />
+              </div>
+            )}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              accept="image/*" 
+              onChange={handleFileChange} 
+            />
+          </div>
+          <div className="profile-hero-info">
+            <div className="profile-header-row">
+              <div className="profile-header-text">
+                <h1 className="profile-name">{name}</h1>
+                <p className="profile-bio">{bio || 'No bio provided.'}</p>
+              </div>
+              <div className="profile-actions">
+                <button className="icon-btn" aria-label="LinkedIn">
+                  <Link size={18} />
+                </button>
+                {isOwnProfile && (
+                  <button className="btn-primary btn-sm" onClick={() => setIsEditProfileOpen(true)}>Edit Profile</button>
+                )}
+              </div>
+            </div>
+            
+            <div className="profile-stats-row">
+              <div className="profile-stat-item">
+                <div className="profile-stat-icon status-icon"><Star size={18} /></div>
+                <div className="profile-stat-text">
+                  <span className="profile-stat-label">Status</span>
+                  <span className="profile-stat-value">{averageRating ? Number(averageRating).toFixed(1) : 'New'}</span>
+                </div>
+              </div>
+              <div className="profile-stat-item">
+                <div className="profile-stat-icon sessions-icon"><Shield size={18} /></div>
+                <div className="profile-stat-text">
+                  <span className="profile-stat-label">Sessions</span>
+                  <span className="profile-stat-value">{sessionsCompleted}</span>
+                </div>
+              </div>
+              <div className="profile-stat-item">
+                <div className="profile-stat-icon member-icon"><Calendar size={18} /></div>
+                <div className="profile-stat-text">
+                  <span className="profile-stat-label">Member Since</span>
+                  <span className="profile-stat-value">{new Date(profileData.created_at || profileData.createdAt || Date.now()).getFullYear()}</span>
+                </div>
+              </div>
+            </div>
+>>>>>>> Stashed changes
           </div>
         </div>
 
+<<<<<<< Updated upstream
         <div className="profile-hero-details">
           <div className="hero-header-text">
             <span className="hero-department">{displayDepartment}</span>
@@ -185,10 +325,114 @@ export default function ProfilePage() {
                 Edit Profile
               </button>
             </div>
+=======
+      <div className="profile-grid">
+        
+        {/* LEFT COLUMN: Teaching & Learning */}
+        <div className="profile-col flex-col gap-lg">
+          <div className="card">
+            <div className="card-header flex items-center justify-between">
+              <h3 className="card-header-title flex items-center gap-sm">
+                <BookOpen size={16} className="text-accent" />
+                Teaching Skills
+              </h3>
+              {isOwnProfile && (
+                <button className="icon-btn" aria-label="Add Teaching Skill" style={{ width: 28, height: 28 }} onClick={() => { setAddSkillType('teach'); setIsAddSkillOpen(true); }}>
+                  <Plus size={16} />
+                </button>
+              )}
+            </div>
+            <div className="card-body">
+              {teaching_skills.length > 0 ? (
+                <div className="flex-col gap-md">
+                  {teaching_skills.map((skill, i) => (
+                    <div key={i} className="skill-row">
+                      <div className="skill-row-info">
+                        <h4>{skill.skill_name}</h4>
+                        <p>{skill.description || 'No description'}</p>
+                      </div>
+                      {!isOwnProfile ? (
+                        <button 
+                          className="btn-secondary btn-sm"
+                          onClick={() => navigate(`/book/${profileId}/${skill.skill_name}`)}
+                        >
+                          Book Session
+                        </button>
+                      ) : (
+                        <button className="btn-icon text-danger" onClick={() => handleDeleteSkill(skill.id)} aria-label="Delete Skill">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="skills-empty-state">
+                  <div className="skills-empty-icon"><GraduationCap size={32} /></div>
+                  <h4 className="skills-empty-title">No teaching skills added yet</h4>
+                  <p className="skills-empty-desc">Share your expertise with the community. Add skills you're proficient in and willing to teach.</p>
+                  {isOwnProfile && <button className="btn-primary-outline btn-sm" onClick={() => { setAddSkillType('teach'); setIsAddSkillOpen(true); }}>Add Teaching Skill</button>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header flex items-center justify-between">
+              <h3 className="card-header-title flex items-center gap-sm">
+                <BookMarked size={16} className="text-info" />
+                Learning Skills
+              </h3>
+              {isOwnProfile && (
+                <button className="icon-btn" aria-label="Add Learning Skill" style={{ width: 28, height: 28 }} onClick={() => { setAddSkillType('learn'); setIsAddSkillOpen(true); }}>
+                  <Plus size={16} />
+                </button>
+              )}
+            </div>
+            <div className="card-body">
+              {learning_skills.length > 0 ? (
+                <div className="flex flex-wrap gap-sm">
+                  {learning_skills.map((skill, i) => (
+                    <span key={i} className="badge badge-default flex items-center gap-xs">
+                      {skill.skill_name}
+                      {isOwnProfile && (
+                        <button className="btn-icon" style={{ width: '16px', height: '16px', marginLeft: '4px' }} onClick={() => handleDeleteSkill(skill.id)}>
+                          <X size={12} />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="skills-empty-state">
+                  <div className="skills-empty-icon"><Target size={32} /></div>
+                  <h4 className="skills-empty-title">What do you want to learn?</h4>
+                  <p className="skills-empty-desc">Add skills you are interested in acquiring to match with mentors.</p>
+                  {isOwnProfile && <button className="btn-primary-outline btn-sm" onClick={() => { setAddSkillType('learn'); setIsAddSkillOpen(true); }}>Add Learning Goal</button>}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {!isOwnProfile && (
+             <div className="card bg-accent-muted" style={{borderColor: 'transparent'}}>
+               <div className="card-body text-center flex-col gap-md">
+                  <h3 className="text-primary font-lg">Want to learn from {name?.split(' ')[0]}?</h3>
+                  <p className="text-secondary text-sm">Book a session using your time credits.</p>
+                  <button 
+                    className="btn-accent w-full mt-sm"
+                    onClick={() => navigate(`/book/${profileId}/general`)}
+                  >
+                    Request Session
+                  </button>
+               </div>
+             </div>
+>>>>>>> Stashed changes
           )}
         </div>
       </div>
 
+<<<<<<< Updated upstream
       <div className="profile-grid-modern">
         {/* LEFT COLUMN: Content */}
         <div className="profile-main-col">
@@ -332,12 +576,28 @@ export default function ProfilePage() {
             </div>
             <div className="info-row">
               <Users size={16} /> Peer & cohort study groups welcome
+=======
+        {/* RIGHT COLUMN: Reviews */}
+        <div className="profile-col flex-col gap-lg">
+          <div className="card" style={{ height: '100%' }}>
+            <div className="card-header">
+              <h3 className="card-header-title flex items-center gap-sm">
+                <Star size={16} className="text-warning" fill="currentColor" />
+                Recent Reviews
+              </h3>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="skills-empty-state" style={{ flexGrow: 1, border: 'none', background: 'transparent' }}>
+                <div className="skills-empty-icon" style={{ background: 'transparent' }}><Award size={40} className="text-muted" opacity={0.5} /></div>
+                <p className="text-muted text-sm italic max-w-[200px]">"Reviews will appear here once the user completes sessions."</p>
+              </div>
+>>>>>>> Stashed changes
             </div>
           </div>
         </div>
-
       </div>
 
+<<<<<<< Updated upstream
       {/* EDIT MODAL */}
       {isEditing && (
         <div className="modal-backdrop">
@@ -425,6 +685,21 @@ export default function ProfilePage() {
         </div>
       )}
 
+=======
+      {/* MODALS */}
+      <EditProfileModal 
+        isOpen={isEditProfileOpen} 
+        onClose={() => setIsEditProfileOpen(false)} 
+        profileData={profileData} 
+        onSuccess={(updatedUser) => setProfileData(prev => ({ ...prev, ...updatedUser }))} 
+      />
+      <AddSkillModal 
+        isOpen={isAddSkillOpen} 
+        onClose={() => setIsAddSkillOpen(false)} 
+        type={addSkillType} 
+        onSuccess={fetchProfile} 
+      />
+>>>>>>> Stashed changes
     </div>
   );
 }

@@ -1,8 +1,7 @@
 // ─── Session Controller ─────────────────────────────────────
 import { query, getClient } from '../config/db.js';
-import { transferCredits, refundCredits } from '../services/creditLedger.js';
+import { refundCredits } from '../services/creditLedger.js';
 import { isValidUUID, requireFields } from '../middleware/validate.js';
-import { validateGoogleMeetLink } from '../utils/validation.js';
 
 /**
  * Helper: emit a session event to a specific user via Socket.io
@@ -63,58 +62,71 @@ export async function createSession(req, res) {
       return res.status(400).json({ error: 'Cannot book a session in the past.' });
     }
 
-    // Check for overlaps for both teacher and learner
-    const { rows: overlaps } = await query(
-      `SELECT id FROM sessions
-       WHERE (teacher_id = $1 OR learner_id = $1 OR teacher_id = $2 OR learner_id = $2)
-         AND status IN ('pending', 'confirmed')
-         AND scheduled_at < $3::timestamp + (INTERVAL '1 minute' * $4)
-         AND scheduled_at + (INTERVAL '1 minute' * duration_minutes) > $3::timestamp`,
-      [teacher_id, learnerId, scheduled_at, duration]
-    );
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
 
-    if (overlaps.length > 0) {
-      return res.status(400).json({ error: 'There is a scheduling conflict with an existing session.' });
-    }
+      // Check for overlaps for both teacher and learner
+      const { rows: overlaps } = await client.query(
+        `SELECT id FROM sessions
+         WHERE (teacher_id = $1 OR learner_id = $1 OR teacher_id = $2 OR learner_id = $2)
+           AND status IN ('pending', 'confirmed')
+           AND scheduled_at < $3::timestamp + (INTERVAL '1 minute' * $4)
+           AND scheduled_at + (INTERVAL '1 minute' * duration_minutes) > $3::timestamp`,
+        [teacher_id, learnerId, scheduled_at, duration]
+      );
 
-    // Check learner balance
-    const { rows: [learner] } = await query(
-      'SELECT credit_balance FROM users WHERE id = $1',
-      [learnerId],
-    );
-    if (!learner || learner.credit_balance < creditsNeeded) {
-      return res.status(400).json({
-        error: 'Insufficient credits.',
-        required: creditsNeeded,
-        balance: learner?.credit_balance || 0,
+      if (overlaps.length > 0) {
+        throw new Error('There is a scheduling conflict with an existing session.');
+      }
+
+      // Check learner balance and escrow credits
+      const { rows: [learnerUpdate] } = await client.query(
+        `UPDATE users SET credit_balance = credit_balance - $1, held_balance = held_balance + $1 
+         WHERE id = $2 AND credit_balance >= $1
+         RETURNING credit_balance`,
+        [creditsNeeded, learnerId]
+      );
+
+      if (!learnerUpdate) {
+        throw new Error('Insufficient credits.');
+      }
+
+      const { rows: [session] } = await client.query(
+        `INSERT INTO sessions (teacher_id, learner_id, skill_id, scheduled_at, duration_minutes, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [teacher_id, learnerId, skill_id, scheduled_at, duration, notes || '']
+      );
+
+      await client.query('COMMIT');
+
+      // Fetch enriched session for the notification
+      const enriched = await getEnrichedSession(session.id);
+
+      // Notify the TEACHER that a new session was booked
+      emitSessionEvent(req, teacher_id, 'session_new', {
+        session: enriched,
+        message: `${req.user.name} booked a session with you`,
       });
+
+      // Also notify the learner for confirmation
+      emitSessionEvent(req, learnerId, 'session_new', {
+        session: enriched,
+        message: `Session booked successfully`,
+      });
+
+      return res.status(201).json({ session: enriched });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('[Session] createSession error:', err.message);
+      const isClientError = ['There is a scheduling conflict with an existing session.', 'Insufficient credits.'].includes(err.message);
+      return res.status(isClientError ? 400 : 500).json({ error: err.message || 'Failed to create session.' });
+    } finally {
+      client.release();
     }
-
-    const { rows: [session] } = await query(
-      `INSERT INTO sessions (teacher_id, learner_id, skill_id, scheduled_at, duration_minutes, notes)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [teacher_id, learnerId, skill_id, scheduled_at, duration, notes || ''],
-    );
-
-    // Fetch enriched session for the notification
-    const enriched = await getEnrichedSession(session.id);
-
-    // Notify the TEACHER that a new session was booked
-    emitSessionEvent(req, teacher_id, 'session_new', {
-      session: enriched,
-      message: `${req.user.name} booked a session with you`,
-    });
-
-    // Also notify the learner for confirmation
-    emitSessionEvent(req, learnerId, 'session_new', {
-      session: enriched,
-      message: `Session booked successfully`,
-    });
-
-    return res.status(201).json({ session: enriched });
   } catch (err) {
-    console.error('[Session] createSession error:', err.message);
+    console.error('[Session] createSession outer error:', err.message);
     return res.status(500).json({ error: 'Failed to create session.' });
   }
 }
@@ -126,15 +138,9 @@ export async function createSession(req, res) {
 export async function confirmSession(req, res) {
   const { id } = req.params;
   const userId = req.user.id;
-  const { meeting_link } = req.body;
 
   if (!isValidUUID(id)) {
     return res.status(400).json({ error: 'Invalid session ID.' });
-  }
-
-  const { valid, error } = validateGoogleMeetLink(meeting_link);
-  if (!valid) {
-    return res.status(400).json({ error });
   }
 
   const client = await getClient();
@@ -165,16 +171,19 @@ export async function confirmSession(req, res) {
       throw new Error(`Cannot confirm a session with status '${session.status}'.`);
     }
 
+    // Auto-generate Jitsi Meet link
+    const jitsiLink = `https://meet.jit.si/veelearn-session-${id}`;
+
     // Update Session
     await client.query(
       `UPDATE sessions 
        SET status = 'confirmed', 
            meeting_link = $1, 
-           meeting_provider = 'GOOGLE_MEET',
+           meeting_provider = 'JITSI',
            meeting_status = 'CREATED',
            meeting_created_at = NOW()
        WHERE id = $2`,
-      [meeting_link, id],
+      [jitsiLink, id],
     );
 
     await client.query('COMMIT');
@@ -189,7 +198,7 @@ export async function confirmSession(req, res) {
     // Notify the LEARNER that their session was confirmed
     emitSessionEvent(req, session.learner_id, 'session_updated', {
       session: enriched,
-      message: `Your session has been confirmed. A Google Meet link has been added. Your session starts on ${dateStr} at ${timeStr}.`,
+      message: `Your session has been confirmed. A Jitsi Meet room is ready. Your session starts on ${dateStr} at ${timeStr}.`,
       action: 'confirmed',
     });
 
@@ -212,81 +221,48 @@ export async function confirmSession(req, res) {
 }
 
 /**
- * PUT /api/sessions/:id/meeting  (protected)
- * Teacher updates the meeting link for an already confirmed session.
+ * GET /api/sessions/:id/join  (protected)
+ * Get the Jitsi Meet link for a session securely.
+ * Allowed 15 minutes before the session starts and during the session.
  */
-export async function updateMeetingLink(req, res) {
+export async function joinSession(req, res) {
   const { id } = req.params;
   const userId = req.user.id;
-  const { meeting_link } = req.body;
 
   if (!isValidUUID(id)) {
     return res.status(400).json({ error: 'Invalid session ID.' });
   }
 
-  const { valid, error } = validateGoogleMeetLink(meeting_link);
-  if (!valid) {
-    return res.status(400).json({ error });
-  }
-
-  const client = await getClient();
-
   try {
-    await client.query('BEGIN');
-
-    const { rows: [session] } = await client.query(
-      `SELECT * FROM sessions WHERE id = $1 FOR UPDATE`,
+    const { rows: [session] } = await query(
+      `SELECT * FROM sessions WHERE id = $1`,
       [id]
     );
 
     if (!session) {
-      throw new Error('Session not found.');
+      return res.status(404).json({ error: 'Session not found.' });
     }
-    if (session.teacher_id !== userId) {
-      throw new Error('Only the teacher can update the meeting link.');
+
+    if (session.teacher_id !== userId && session.learner_id !== userId) {
+      return res.status(403).json({ error: 'You are not a participant of this session.' });
     }
+
     if (session.status !== 'confirmed') {
-      throw new Error('Session must be confirmed to update meeting link.');
-    }
-    
-    // Check if session has already started
-    if (new Date(session.scheduled_at) <= new Date()) {
-       throw new Error('Cannot update meeting link after the session has started.');
+      return res.status(400).json({ error: `Cannot join a session with status '${session.status}'.` });
     }
 
-    await client.query(
-      `UPDATE sessions 
-       SET meeting_link = $1, meeting_status = 'UPDATED' 
-       WHERE id = $2`,
-      [meeting_link, id],
-    );
+    // Check join window: 15 minutes before scheduled_at
+    const scheduledAt = new Date(session.scheduled_at);
+    const joinWindowStart = new Date(scheduledAt.getTime() - 15 * 60 * 1000);
 
-    await client.query('COMMIT');
+    if (new Date() < joinWindowStart) {
+      return res.status(403).json({ error: 'You can only join the session 15 minutes before it starts.' });
+    }
 
-    const enriched = await getEnrichedSession(id);
-
-    // Notify learner
-    emitSessionEvent(req, session.learner_id, 'session_updated', {
-      session: enriched,
-      message: 'Your session meeting link has been updated.',
-      action: 'updated',
-    });
-
-    // Notify teacher
-    emitSessionEvent(req, session.teacher_id, 'session_updated', {
-      session: enriched,
-      message: 'Meeting link updated successfully.',
-      action: 'updated',
-    });
-
-    return res.json({ session: enriched });
+    return res.json({ joinUrl: session.meeting_link });
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Session] updateMeetingLink error:', err.message);
-    const isClientError = ['Only the teacher can update the meeting link.', 'Session not found.', 'Session must be confirmed to update meeting link.', 'Cannot update meeting link after the session has started.'].includes(err.message);
-    return res.status(isClientError ? 400 : 500).json({ error: err.message || 'Failed to update meeting link.' });
-  } finally {
-    client.release();
+    console.error('[Session] joinSession error:', err.message);
+    return res.status(500).json({ error: 'Failed to join session.' });
   }
 }
 
@@ -295,30 +271,45 @@ export async function updateMeetingLink(req, res) {
  * Teacher rejects a pending session.
  */
 export async function rejectSession(req, res) {
-  try {
-    const { id } = req.params;
-    if (!isValidUUID(id)) {
-      return res.status(400).json({ error: 'Invalid session ID.' });
-    }
+  const { id } = req.params;
 
-    const { rows: [session] } = await query(
-      'SELECT * FROM sessions WHERE id = $1',
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid session ID.' });
+  }
+
+  const client = await getClient();
+
+  try {
+    await client.query('BEGIN');
+
+    const { rows: [session] } = await client.query(
+      'SELECT * FROM sessions WHERE id = $1 FOR UPDATE',
       [id],
     );
+
     if (!session) {
-      return res.status(404).json({ error: 'Session not found.' });
+      throw new Error('Session not found.');
     }
     if (session.teacher_id !== req.user.id) {
-      return res.status(403).json({ error: 'Only the teacher can reject a session.' });
+      throw new Error('Only the teacher can reject a session.');
     }
     if (session.status !== 'pending') {
-      return res.status(400).json({ error: `Cannot reject a session with status '${session.status}'.` });
+      throw new Error(`Cannot reject a session with status '${session.status}'.`);
     }
 
-    await query(
+    // Refund escrowed credits
+    const creditsToRefund = Math.ceil(session.duration_minutes / 60);
+    await client.query(
+      `UPDATE users SET held_balance = held_balance - $1, credit_balance = credit_balance + $1 WHERE id = $2`,
+      [creditsToRefund, session.learner_id]
+    );
+
+    await client.query(
       `UPDATE sessions SET status = 'rejected' WHERE id = $1`,
       [id],
     );
+
+    await client.query('COMMIT');
 
     const enriched = await getEnrichedSession(id);
 
@@ -338,8 +329,12 @@ export async function rejectSession(req, res) {
 
     return res.json({ session: enriched });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('[Session] rejectSession error:', err.message);
-    return res.status(500).json({ error: 'Failed to reject session.' });
+    const isClientError = ['Only the teacher can reject a session.', 'Session not found.'].includes(err.message) || err.message.startsWith('Cannot reject');
+    return res.status(isClientError ? 400 : 500).json({ error: err.message || 'Failed to reject session.' });
+  } finally {
+    client.release();
   }
 }
 
@@ -365,7 +360,7 @@ export async function completeSession(req, res) {
     const sessionResult = await client.query(
       `SELECT learner_id, teacher_id, status, duration_minutes,
               teacher_completion_confirmed, learner_completion_confirmed 
-       FROM sessions WHERE id = $1 FOR UPDATE`, 
+       FROM sessions WHERE id = $1 FOR UPDATE`,
       [id]
     );
 
@@ -416,11 +411,11 @@ export async function completeSession(req, res) {
     if (bothConfirmed) {
       const creditsToTransfer = Math.ceil(session.duration_minutes / 60);
 
-      // Deduct credits from the learner
+      // Relese held credits from the learner
       const learnerUpdate = await client.query(
-        `UPDATE users SET credit_balance = credit_balance - $1 
-         WHERE id = $2 AND credit_balance >= $1 
-         RETURNING credit_balance`,
+        `UPDATE users SET held_balance = held_balance - $1 
+         WHERE id = $2 AND held_balance >= $1 
+         RETURNING held_balance`,
         [creditsToTransfer, session.learner_id]
       );
 
@@ -496,10 +491,10 @@ export async function completeSession(req, res) {
     // IF ANYTHING FAILED ABOVE, REVERT ALL CHANGES IMMEDIATELY
     await client.query('ROLLBACK');
     console.error('[Session] completeSession Transaction failed, rolling back:', error.message);
-    
+
     // Return a clean error to the frontend
     const isClientError = ['Unauthorized to complete this session.', 'Session not found.', 'Learner has insufficient credits to complete transaction.', 'Already confirmed.'].includes(error.message) || error.message.startsWith('Cannot complete');
-    
+
     return res.status(isClientError ? 400 : 500).json({ error: error.message || 'Failed to complete session.' });
   } finally {
     // ALWAYS release the client back to the pool
@@ -538,15 +533,12 @@ export async function cancelSession(req, res) {
       throw new Error(`Cannot cancel a session with status '${session.status}'.`);
     }
 
-    // If credits were already transferred, issue a refund
-    const { rows: spendTx } = await client.query(
-      `SELECT amount FROM credit_transactions
-       WHERE session_id = $1 AND type = 'spend'`,
-      [id],
+    // Refund escrowed credits back to the learner
+    const creditsToRefund = Math.ceil(session.duration_minutes / 60);
+    await client.query(
+      `UPDATE users SET held_balance = held_balance - $1, credit_balance = credit_balance + $1 WHERE id = $2`,
+      [creditsToRefund, session.learner_id]
     );
-    if (spendTx.length > 0) {
-      await refundCredits(session.learner_id, id, spendTx[0].amount);
-    }
 
     // Attempt to delete Google Calendar Event if it exists - removed based on instructions
 

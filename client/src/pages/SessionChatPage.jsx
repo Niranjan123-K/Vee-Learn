@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+<<<<<<< Updated upstream
 import { 
   Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock, 
   Check, CheckCheck, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
+=======
+import {
+  Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock,
+  Check, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
+>>>>>>> Stashed changes
   CheckCircle, Zap, MessageSquare
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
@@ -15,7 +21,7 @@ import './SessionChatPage.css';
 
 const ChatMessage = React.memo(({ msg, isMe, showDate, isGrouped }) => {
   const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
+
   return (
     <>
       {showDate && (
@@ -46,15 +52,15 @@ export default function SessionChatPage() {
   const [messages, setMessages] = useState([]);
   const [allSessions, setAllSessions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [partnerIsTyping, setPartnerIsTyping] = useState(false);
-  
+
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
-  
+
   const typingTimeoutRef = useRef(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -78,6 +84,7 @@ export default function SessionChatPage() {
         ]);
         setSession(sessionRes.data.session);
         setMessages(messagesRes.data.messages || []);
+<<<<<<< Updated upstream
         
         const rawSessions = (allSessionsRes.data.sessions || []).filter(s => 
           ['confirmed', 'completed'].includes(s.status)
@@ -98,6 +105,14 @@ export default function SessionChatPage() {
         }
 
         setAllSessions(deduplicationList);
+=======
+
+        const filtered = (allSessionsRes.data.sessions || []).filter(s =>
+          ['confirmed', 'completed'].includes(s.status)
+        ).sort((a, b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
+
+        setAllSessions(filtered);
+>>>>>>> Stashed changes
       } catch (err) {
         console.error('Failed to load session chat:', err);
         setError('Failed to load session chat.');
@@ -178,24 +193,35 @@ export default function SessionChatPage() {
     }
   };
 
+  const handleJoin = async () => {
+    try {
+      const res = await api.get(`/sessions/${sessionId}/join`);
+      if (res.data.joinUrl) {
+        window.open(res.data.joinUrl, '_blank');
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Cannot join session at this time.');
+    }
+  };
+
   const renderCountdown = () => {
     if (!session) return null;
     if (session.status === 'completed') return <span className="text-success">Completed</span>;
-    
+
     const scheduledAt = new Date(session.scheduled_at);
     const diffMs = scheduledAt - currentTime;
-    
+
     if (diffMs <= 0) return <span className="text-success">In Progress</span>;
-    
+
     const diffMins = Math.floor(diffMs / 60000);
     const hours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
-    
+
     if (hours > 24) {
       const days = Math.floor(hours / 24);
       return `in ${days} day${days > 1 ? 's' : ''}`;
     }
-    
+
     if (hours > 0) return `in ${hours}h ${mins}m`;
     return `in ${mins}m`;
   };
@@ -203,16 +229,16 @@ export default function SessionChatPage() {
   const filteredSessions = allSessions.filter(s => {
     const isTeacher = s.teacher_id === user?.id;
     const partnerName = isTeacher ? s.learner_name : s.teacher_name;
-    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   if (loading) {
     return (
       <div className="chat-workspace">
         <div className="chat-center">
-          <div className="loading-screen" style={{minHeight: '100%', background: 'transparent'}}>
-            <div className="skeleton" style={{width: '100%', height: '100%'}} />
+          <div className="loading-screen" style={{ minHeight: '100%', background: 'transparent' }}>
+            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
           </div>
         </div>
       </div>
@@ -222,7 +248,7 @@ export default function SessionChatPage() {
   if (error || !session) {
     return (
       <div className="chat-workspace">
-        <div className="chat-center" style={{alignItems: 'center', justifyContent: 'center'}}>
+        <div className="chat-center" style={{ alignItems: 'center', justifyContent: 'center' }}>
           <AlertCircle size={48} className="text-danger" style={{ marginBottom: '16px' }} />
           <h3>{error || 'Session not found'}</h3>
           <button className="btn-secondary mt-3" onClick={() => navigate('/sessions')}>Go to Sessions</button>
@@ -237,29 +263,34 @@ export default function SessionChatPage() {
     avatar: isTeacher ? session.learner_avatar : session.teacher_avatar,
     role: isTeacher ? 'Learner' : 'Teacher'
   };
-  
+
   const isMeetingReady = () => {
     const scheduledAt = new Date(session.scheduled_at);
-    const tenMinsBefore = new Date(scheduledAt.getTime() - 10 * 60000);
-    return currentTime >= tenMinsBefore;
+    const fifteenMinsBefore = new Date(scheduledAt.getTime() - 15 * 60000);
+    return currentTime >= fifteenMinsBefore;
   };
 
   return (
+<<<<<<< Updated upstream
     <div className={`chat-workspace ${showRightDrawer ? 'drawer-open' : ''}`}>
       
+=======
+    <div className="chat-workspace">
+
+>>>>>>> Stashed changes
       {/* 1. LEFT PANEL: Conversations */}
       <aside className={`chat-left-sidebar ${showLeftDrawer ? 'show' : ''}`}>
         <div className="chat-sidebar-header">
           <h3>Conversations</h3>
           <button className="btn-icon show-on-mobile" onClick={() => setShowLeftDrawer(false)}><X size={18} /></button>
         </div>
-        
+
         <div className="chat-sidebar-search">
           <div className="search-input-wrapper">
             <Search size={14} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Find a chat..." 
+            <input
+              type="text"
+              placeholder="Find a chat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="chat-search-input"
@@ -273,18 +304,18 @@ export default function SessionChatPage() {
             const sPartnerName = sIsTeacher ? s.learner_name : s.teacher_name;
             const sPartnerAvatar = sIsTeacher ? s.learner_avatar : s.teacher_avatar;
             const isActive = s.id === sessionId;
-            
+
             return (
-              <Link 
-                key={s.id} 
-                to={`/sessions/${s.id}/chat`} 
+              <Link
+                key={s.id}
+                to={`/sessions/${s.id}/chat`}
                 className={`chat-list-item ${isActive ? 'active' : ''}`}
                 style={{ animation: `message-fade-in 0.3s ease ${idx * 0.05}s forwards`, opacity: 0 }}
                 onClick={() => setShowLeftDrawer(false)}
               >
                 <div className="chat-list-avatar">
-                   {sPartnerAvatar ? <img src={`http://localhost:5000${sPartnerAvatar}`} alt={sPartnerName} className="avatar" /> : <div className="avatar-fallback">{getInitials(sPartnerName)}</div>}
-                   {s.status === 'confirmed' && <span className="online-indicator" />}
+                  {sPartnerAvatar ? <img src={`http://localhost:5000${sPartnerAvatar}`} alt={sPartnerName} className="avatar" /> : <div className="avatar-fallback">{getInitials(sPartnerName)}</div>}
+                  {s.status === 'confirmed' && <span className="online-indicator" />}
                 </div>
                 <div className="chat-list-content">
                   <div className="chat-list-top">
@@ -314,9 +345,9 @@ export default function SessionChatPage() {
             <button className="btn-icon hide-on-mobile" onClick={(e) => { e.stopPropagation(); navigate('/sessions'); }}>
               <ArrowLeft size={18} />
             </button>
-            
+
             {partner.avatar ? <img src={`http://localhost:5000${partner.avatar}`} alt={partner.name} className="header-avatar" /> : <div className="avatar-fallback header-avatar">{getInitials(partner.name)}</div>}
-            
+
             <div className="session-hub-info">
               <h2 className="session-hub-title">
                 {partner.name}
@@ -331,7 +362,7 @@ export default function SessionChatPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="chat-header-right">
             {session.status === 'confirmed' && session.meeting_link && (
               <a 
@@ -367,20 +398,20 @@ export default function SessionChatPage() {
           ) : (
             messages.map((msg, index) => {
               const prevMsg = messages[index - 1];
-              
+
               // Logic for date separation
               const currentDate = new Date(msg.timestamp).toLocaleDateString();
               const prevDate = prevMsg ? new Date(prevMsg.timestamp).toLocaleDateString() : null;
               const showDate = currentDate !== prevDate;
-              
+
               // WhatsApp style grouping
               const isGrouped = !showDate && prevMsg && prevMsg.senderId === msg.senderId && (new Date(msg.timestamp) - new Date(prevMsg.timestamp)) < 60000;
-              
+
               return (
-                <ChatMessage 
-                  key={msg.id} 
-                  msg={msg} 
-                  isMe={msg.senderId === user?.id} 
+                <ChatMessage
+                  key={msg.id}
+                  msg={msg}
+                  isMe={msg.senderId === user?.id}
                   showDate={showDate}
                   isGrouped={isGrouped}
                 />
@@ -401,7 +432,7 @@ export default function SessionChatPage() {
             <div className="composer-actions-left">
               <div className="composer-icon-btn"><Paperclip size={18} /></div>
             </div>
-            
+
             <input
               type="text"
               className="chat-input-field"
@@ -413,12 +444,12 @@ export default function SessionChatPage() {
               }}
               disabled={session.status !== 'confirmed'}
             />
-            
+
             <div className="composer-actions-right">
               <div className="composer-icon-btn"><Smile size={18} /></div>
               <div className="composer-icon-btn"><Mic size={18} /></div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="send-btn"
                 disabled={!inputText.trim() || session.status !== 'confirmed'}
               >
@@ -438,30 +469,24 @@ export default function SessionChatPage() {
           <h3>Workspace</h3>
           <button className="btn-icon show-on-mobile" onClick={() => setShowRightDrawer(false)}><X size={18} /></button>
         </div>
-        
+
         <div className="chat-right-content">
-          
+
           {/* Meeting Card */}
           <div className="ws-card">
             <div className="ws-card-header"><Video size={14} /> Meeting</div>
             <div className="meeting-countdown-large">{renderCountdown()}</div>
             {session.status === 'confirmed' && (
               <>
-                {session.meeting_link ? (
-                  <a 
-                    href={session.meeting_link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className={`btn-primary btn-meeting ${!isMeetingReady() ? 'disabled' : ''}`}
-                    onClick={(e) => { if(!isMeetingReady()) e.preventDefault(); }}
-                  >
-                    Join Video Call
-                  </a>
-                ) : (
-                  <button className="btn-secondary btn-meeting disabled">
-                    <Clock size={16} style={{marginRight: '6px'}}/> Awaiting Link
-                  </button>
-                )}
+                <button
+                  className={`btn-primary btn-meeting ${!isMeetingReady() ? 'disabled' : ''}`}
+                  onClick={(e) => {
+                    if (!isMeetingReady()) e.preventDefault();
+                    else handleJoin();
+                  }}
+                >
+                  Join Video Call
+                </button>
               </>
             )}
           </div>
@@ -495,7 +520,7 @@ export default function SessionChatPage() {
 
           {/* Actions / Complete */}
           {session.status === 'confirmed' && (
-            <div className="ws-card" style={{borderColor: 'var(--accent-muted)'}}>
+            <div className="ws-card" style={{ borderColor: 'var(--accent-muted)' }}>
               <div className="ws-card-header text-accent"><CheckCircle size={14} /> Actions</div>
               {(() => {
                 const userConfirmed = isTeacher ? session.teacher_completion_confirmed : session.learner_completion_confirmed;
@@ -503,8 +528,8 @@ export default function SessionChatPage() {
 
                 if (!userConfirmed) {
                   return (
-                    <button 
-                      className="btn-success btn-meeting" 
+                    <button
+                      className="btn-success btn-meeting"
                       onClick={handleCompleteSession}
                       disabled={isCompleting}
                     >
@@ -528,7 +553,7 @@ export default function SessionChatPage() {
             <Zap size={24} className="ws-placeholder-icon" />
             <div className="ws-placeholder-text">AI Session Summary will be generated after completion.</div>
           </div>
-          
+
           {/* Resources Placeholder */}
           <div className="ws-card ws-placeholder-card">
             <File size={24} className="ws-placeholder-icon" />
@@ -538,7 +563,7 @@ export default function SessionChatPage() {
         </div>
       </aside>
 
-      <ReviewModal 
+      <ReviewModal
         isOpen={showReviewModal}
         session={session}
         onClose={() => setShowReviewModal(false)}

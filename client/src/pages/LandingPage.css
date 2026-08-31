@@ -157,10 +157,29 @@
   box-shadow: var(--shadow-lg);
 }
 
-.card-1 { top: 0; left: 10%; animation: float 4s ease-in-out infinite; }
-.card-2 { top: 20%; right: 0; animation: float 5s ease-in-out infinite 0.5s; }
-.card-3 { bottom: 20%; left: 0; animation: float 4.5s ease-in-out infinite 1s; }
-.card-4 { bottom: 0; right: 10%; animation: float 5.5s ease-in-out infinite 1.5s; }
+.card-1 {
+  top: 0;
+  left: 10%;
+  animation: float 4s ease-in-out infinite;
+}
+
+.card-2 {
+  top: 20%;
+  right: 0;
+  animation: float 5s ease-in-out infinite 0.5s;
+}
+
+.card-3 {
+  bottom: 20%;
+  left: 0;
+  animation: float 4.5s ease-in-out infinite 1s;
+}
+
+.card-4 {
+  bottom: 0;
+  right: 10%;
+  animation: float 5.5s ease-in-out infinite 1.5s;
+}
 
 .hero-center-glow {
   position: absolute;
@@ -267,7 +286,7 @@
   height: 60px;
   border-radius: var(--radius-lg);
   background: rgba(108, 99, 255, 0.1);
-  color: var(--accent-primary-light);
+  color: var(--accent);
   margin-bottom: 20px;
 }
 
@@ -450,8 +469,13 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .hero-title { font-size: 3rem; }
-  .categories-grid { grid-template-columns: repeat(3, 1fr); }
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -462,16 +486,52 @@
     gap: 40px;
     min-height: auto;
   }
-  .hero-content { max-width: 100%; }
-  .hero-subtitle { margin-left: auto; margin-right: auto; }
-  .hero-actions { justify-content: center; }
-  .hero-title { font-size: 2.5rem; }
-  .landing-stats { gap: 30px; flex-wrap: wrap; }
-  .stat-value { font-size: 2rem; }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  .hero-subtitle {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .landing-stats {
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
   .steps-grid,
-  .testimonials-grid { grid-template-columns: 1fr; }
-  .categories-grid { grid-template-columns: repeat(2, 1fr); }
-  .landing-section-title { font-size: 2rem; }
-  .footer-inner { flex-direction: column; }
-  .footer-links { flex-wrap: wrap; gap: 30px; }
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .landing-section-title {
+    font-size: 2rem;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 30px;
+  }
 }
