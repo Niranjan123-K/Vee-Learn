@@ -12,6 +12,7 @@ export default function BookSessionPage() {
   const { teacherId, skillId } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
+  const fetchUser = useAuthStore(state => state.fetchUser);
 
   const [teacher, setTeacher] = useState(null);
   const [skill, setSkill] = useState('');
@@ -78,7 +79,8 @@ export default function BookSessionPage() {
         scheduled_at: scheduledAt,
         duration_minutes: 60,
       });
-      setStep(4); // Success step
+      fetchUser();
+        setStep(4); // Success step
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to book session');
       setBooking(false);
@@ -346,3 +348,4 @@ export default function BookSessionPage() {
     </div>
   );
 }
+

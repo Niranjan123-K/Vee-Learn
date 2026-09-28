@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-<<<<<<< Updated upstream
 import { 
   Clock, Calendar, Users, ChevronRight, Compass, ArrowRight, 
   Zap, Check, X, MessageSquare, Star, BookOpen, 
-=======
-import {
-  Clock, Calendar, Users, ChevronRight, Compass, ArrowRight,
-  Zap, CheckCircle, XCircle, MessageSquare, Star, BookOpen,
->>>>>>> Stashed changes
   CalendarCheck, MessageCircle, Wallet, ArrowUpRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -165,7 +159,6 @@ export default function DashboardPage() {
 
                         return (
                           <div key={session.id} className="dash-list-item" onClick={() => navigate('/sessions')}>
-<<<<<<< Updated upstream
                              <div className="dash-item-icon">
                                <Clock size={20} />
                              </div>
@@ -176,18 +169,6 @@ export default function DashboardPage() {
                              <div className="dash-item-meta">
                                <p className="dash-item-time">Today</p>
                              </div>
-=======
-                            <div className="dash-item-icon">
-                              <Clock size={18} className="text-warning" />
-                            </div>
-                            <div className="dash-item-content">
-                              <p className="dash-item-title">{partnerName}</p>
-                              <p className="dash-item-desc">{isTeacher ? `Requested ${session.skill_name}` : `Awaiting ${session.skill_name}`}</p>
-                            </div>
-                            <div className="dash-item-meta">
-                              <p className="dash-item-time">Today</p>
-                            </div>
->>>>>>> Stashed changes
                           </div>
                         );
                       })}
@@ -213,7 +194,6 @@ export default function DashboardPage() {
                   {recentActivity.length > 0 ? (
                     <div className="dash-list">
                       {recentActivity.slice(0, 3).map(session => {
-<<<<<<< Updated upstream
                          const isCompleted = session.status === 'completed';
                          return (
                            <div key={session.id} className="dash-list-item">
@@ -229,23 +209,6 @@ export default function DashboardPage() {
                               </div>
                            </div>
                          );
-=======
-                        const isCompleted = session.status === 'completed';
-                        return (
-                          <div key={session.id} className="dash-list-item">
-                            <div className="dash-item-icon">
-                              {isCompleted ? <CheckCircle size={18} className="text-success" /> : <XCircle size={18} className="text-danger" />}
-                            </div>
-                            <div className="dash-item-content">
-                              <p className="dash-item-title">{isCompleted ? 'Session Completed' : 'Session Cancelled'}</p>
-                              <p className="dash-item-desc">{session.skill_name}</p>
-                            </div>
-                            <div className="dash-item-meta">
-                              <p className="dash-item-date">{new Date(session.updated_at || session.updatedAt || session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-                            </div>
-                          </div>
-                        );
->>>>>>> Stashed changes
                       })}
                     </div>
                   ) : (

@@ -25,6 +25,7 @@ const LedgerPage = lazy(() => import('./pages/LedgerPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'));
+const SessionChatPage = lazy(() => import('./pages/SessionChatPage'));
 
 function App() {
   const fetchUser = useAuthStore(state => state.fetchUser);
@@ -71,6 +72,7 @@ function App() {
             <Route path="/ledger" element={<Suspense fallback={<LearningAnimation />}><LedgerPage /></Suspense>} />
             <Route path="/messages" element={<Suspense fallback={<LearningAnimation />}><MessagesPage /></Suspense>} />
             <Route path="/messages/:userId" element={<Suspense fallback={<LearningAnimation />}><MessagesPage /></Suspense>} />
+            <Route path="/sessions/:sessionId/chat" element={<Suspense fallback={<LearningAnimation />}><SessionChatPage /></Suspense>} />
           </Route>
 
           {/* Catch all */}

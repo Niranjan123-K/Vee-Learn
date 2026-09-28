@@ -213,6 +213,7 @@ public class UserService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> rows = query.getResultList();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Object[] row : rows) {
@@ -229,7 +230,16 @@ public class UserService {
             m.put("preferred_language", row[9]);
             m.put("averageRating", row[10]);
             m.put("sessionsCompleted", row[11]);
-            m.put("skills_offered", row[12]);
+            try {
+                Object skillsOffered = row[12];
+                if (skillsOffered != null && skillsOffered.toString().startsWith("[")) {
+                    m.put("skills_offered", mapper.readValue(skillsOffered.toString(), List.class));
+                } else {
+                    m.put("skills_offered", new ArrayList<>());
+                }
+            } catch (Exception e) {
+                m.put("skills_offered", new ArrayList<>());
+            }
             result.add(m);
         }
 

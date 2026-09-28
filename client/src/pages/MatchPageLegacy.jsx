@@ -6,7 +6,7 @@ import UserCard from '../components/UserCard';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import api from '../utils/api';
-import './MatchPage.css';
+import './MatchPageLegacy.css';
 
 export default function MatchPage() {
   const { skillId } = useParams();

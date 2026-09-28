@@ -39,27 +39,17 @@
   --text-muted: #6E707E;
   --text-inverse: #22232A;
 
-<<<<<<< Updated upstream
   /* Accent */
   --accent: #FF4757;
   --accent-hover: #FF6B78;
   --accent-muted: rgba(255, 71, 87, 0.12);
   --accent-text: #FF4757;
-=======
-  /* Accent (Sleek Emerald Dark Theme - zero blue) */
-  --accent: #10B981;
-  --accent-hover: #059669;
-  --accent-muted: rgba(16, 185, 129, 0.15);
-  --accent-text: #D1FAE5;
-  --accent-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
->>>>>>> Stashed changes
 
   /* Status Colors */
   --success: #22C55E;
   --success-muted: rgba(34, 197, 94, 0.12);
   --warning: #F59E0B;
   --warning-muted: rgba(245, 158, 11, 0.12);
-<<<<<<< Updated upstream
   --danger: #FF4757;
   --danger-muted: rgba(255, 71, 87, 0.12);
   --info: #FF4757;
@@ -70,18 +60,6 @@
   --color-error: #FF4757;
   --primary: #FF4757;
   --primary-rgb: 255, 71, 87;
-=======
-  --danger: #EF4444;
-  --danger-muted: rgba(239, 68, 68, 0.12);
-  --info: #10B981;
-  --info-muted: rgba(16, 185, 129, 0.15);
-
-  /* Legacy color aliases */
-  --color-success: #22C55E;
-  --color-error: #EF4444;
-  --primary: #10B981;
-  --primary-rgb: 16, 185, 129;
->>>>>>> Stashed changes
 
   /* Border Radius */
   --radius-xs: 4px;
@@ -236,13 +214,7 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-base);
   background-color: var(--bg-primary);
-<<<<<<< Updated upstream
   background-image: none;
-=======
-  /* Extremely subtle radial gradient for depth */
-  background-image: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
-    radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
->>>>>>> Stashed changes
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: var(--leading-relaxed);
@@ -345,26 +317,9 @@ img {
   white-space: nowrap;
   cursor: pointer;
 }
-<<<<<<< Updated upstream
 .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-=======
-
-.btn-primary:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
->>>>>>> Stashed changes
 
 .btn-secondary {
   display: inline-flex;
@@ -558,11 +513,8 @@ img {
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
-<<<<<<< Updated upstream
 .gradient-btn:hover { background: var(--accent-hover); }
 .gradient-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-=======
->>>>>>> Stashed changes
 
 .gradient-btn:hover {
   opacity: 0.85;

@@ -39,7 +39,7 @@ public class Bounty {
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "session_status")
     @Builder.Default
     private SessionStatus status = SessionStatus.pending;
 

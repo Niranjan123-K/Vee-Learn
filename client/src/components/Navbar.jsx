@@ -1,10 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-<<<<<<< Updated upstream
-import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, BookOpen, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search } from 'lucide-react';
-=======
-import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, Users, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search, Sun, Moon } from 'lucide-react';
->>>>>>> Stashed changes
+import { Bell, LogOut, User, Settings, LayoutDashboard, Compass, BookOpen, Calendar, CheckCircle, XCircle, Star, Wallet, Menu, Search, Sun, Moon } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import useThemeStore from '../stores/themeStore';
 import useNotificationStore from '../stores/notificationStore';
@@ -165,7 +161,6 @@ export default function Navbar({ onToggleSidebar }) {
             style={{ cursor: 'pointer' }}
           >
             <Search size={16} className="search-icon" />
-<<<<<<< Updated upstream
             <div className="form-input search-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
               <span>Search everywhere...</span>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -174,16 +169,6 @@ export default function Navbar({ onToggleSidebar }) {
               </div>
             </div>
           </div>
-=======
-            <input
-              type="text"
-              className="form-input search-input"
-              placeholder="Search skills or names..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
->>>>>>> Stashed changes
         </div>
 
         <div className="navbar-right">
@@ -343,13 +328,8 @@ export default function Navbar({ onToggleSidebar }) {
           <NavLink
             key={item.path}
             to={item.path}
-<<<<<<< Updated upstream
             className={({ isActive }) => 
               `tab-link ${isActive || (item.path === '/learning' && location.pathname.startsWith('/learning')) ? 'active' : ''}`
-=======
-            className={({ isActive }) =>
-              `tab-link ${isActive || (item.path === '/match/all' && location.pathname.startsWith('/match')) ? 'active' : ''}`
->>>>>>> Stashed changes
             }
           >
             <item.icon size={24} />

@@ -1,14 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-<<<<<<< Updated upstream
 import { 
   Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock, 
   Check, CheckCheck, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
-=======
-import {
-  Send, ArrowLeft, MoreVertical, ShieldCheck, AlertCircle, Video, Clock,
-  Check, Menu, X, Search, File, BookOpen, Paperclip, Smile, Mic, Info,
->>>>>>> Stashed changes
   CheckCircle, Zap, MessageSquare
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
@@ -84,7 +78,6 @@ export default function SessionChatPage() {
         ]);
         setSession(sessionRes.data.session);
         setMessages(messagesRes.data.messages || []);
-<<<<<<< Updated upstream
         
         const rawSessions = (allSessionsRes.data.sessions || []).filter(s => 
           ['confirmed', 'completed'].includes(s.status)
@@ -105,14 +98,6 @@ export default function SessionChatPage() {
         }
 
         setAllSessions(deduplicationList);
-=======
-
-        const filtered = (allSessionsRes.data.sessions || []).filter(s =>
-          ['confirmed', 'completed'].includes(s.status)
-        ).sort((a, b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
-
-        setAllSessions(filtered);
->>>>>>> Stashed changes
       } catch (err) {
         console.error('Failed to load session chat:', err);
         setError('Failed to load session chat.');
@@ -271,13 +256,8 @@ export default function SessionChatPage() {
   };
 
   return (
-<<<<<<< Updated upstream
     <div className={`chat-workspace ${showRightDrawer ? 'drawer-open' : ''}`}>
       
-=======
-    <div className="chat-workspace">
-
->>>>>>> Stashed changes
       {/* 1. LEFT PANEL: Conversations */}
       <aside className={`chat-left-sidebar ${showLeftDrawer ? 'show' : ''}`}>
         <div className="chat-sidebar-header">
@@ -363,7 +343,32 @@ export default function SessionChatPage() {
             </div>
           </div>
 
-          <div className="chat-header-right">
+          <div className="chat-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {session.status === 'confirmed' && (() => {
+              const userConfirmed = isTeacher ? session.teacher_completion_confirmed : session.learner_completion_confirmed;
+              const otherUserConfirmed = isTeacher ? session.learner_completion_confirmed : session.teacher_completion_confirmed;
+
+              if (!userConfirmed) {
+                return (
+                  <button
+                    className="btn-success"
+                    style={{ padding: '6px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={handleCompleteSession}
+                    disabled={isCompleting}
+                  >
+                    <CheckCircle size={16} />
+                    {isCompleting ? 'Processing...' : otherUserConfirmed ? 'Confirm Completion' : 'Mark as Completed'}
+                  </button>
+                );
+              } else {
+                return (
+                  <span className="badge" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-primary)', fontSize: '12px', padding: '6px 12px', borderRadius: '8px' }}>
+                    Waiting for {getInitials(partner.name)}
+                  </span>
+                );
+              }
+            })()}
+
             {session.status === 'confirmed' && session.meeting_link && (
               <a 
                 href={session.meeting_link} 
@@ -518,35 +523,7 @@ export default function SessionChatPage() {
             </div>
           </div>
 
-          {/* Actions / Complete */}
-          {session.status === 'confirmed' && (
-            <div className="ws-card" style={{ borderColor: 'var(--accent-muted)' }}>
-              <div className="ws-card-header text-accent"><CheckCircle size={14} /> Actions</div>
-              {(() => {
-                const userConfirmed = isTeacher ? session.teacher_completion_confirmed : session.learner_completion_confirmed;
-                const otherUserConfirmed = isTeacher ? session.learner_completion_confirmed : session.teacher_completion_confirmed;
-
-                if (!userConfirmed) {
-                  return (
-                    <button
-                      className="btn-success btn-meeting"
-                      onClick={handleCompleteSession}
-                      disabled={isCompleting}
-                    >
-                      {isCompleting ? 'Processing...' : otherUserConfirmed ? 'Confirm Completion' : 'Mark as Completed'}
-                    </button>
-                  );
-                } else {
-                  return (
-                    <div className="ws-placeholder-text">
-                      <p className="text-success mb-xs">You confirmed completion.</p>
-                      <p>Waiting for {partner.name}.</p>
-                    </div>
-                  );
-                }
-              })()}
-            </div>
-          )}
+          {/* Actions / Complete moved to header */}
 
           {/* AI Assistant Placeholder */}
           <div className="ws-card ws-placeholder-card">

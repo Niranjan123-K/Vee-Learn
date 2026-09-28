@@ -22,4 +22,10 @@ public class SessionDtos {
         private Integer duration_minutes;
         private String notes;
     }
+
+    @Data
+    public static class UpdateMeetingLinkRequest {
+        @NotNull(message = "meeting_link is required.")
+        private String meeting_link;
+    }
 }

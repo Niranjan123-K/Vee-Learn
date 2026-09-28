@@ -29,7 +29,7 @@ const useChatStore = create((set, get) => ({
       _socket = null;
     }
 
-    const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const serverUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     const socket = socketIO(serverUrl, {
       withCredentials: true,
@@ -103,7 +103,7 @@ const useChatStore = create((set, get) => ({
 
   loadMessages: async (userId) => {
     try {
-      const res = await api.get(`/messages/${userId}`);
+      const res = await api.get(`/messages/conversation/${userId}`);
       set({ messages: res.data.messages || res.data || [] });
     } catch (err) {
       console.error('Failed to load messages:', err);

@@ -58,6 +58,16 @@ public class SessionController {
         return ResponseEntity.ok(Map.of("session", session));
     }
 
+    @PutMapping("/{id}/meeting-link")
+    public ResponseEntity<Map<String, Object>> updateMeetingLink(
+        @AuthenticationPrincipal UserPrincipal principal,
+        @PathVariable UUID id,
+        @Valid @RequestBody SessionDtos.UpdateMeetingLinkRequest req
+    ) {
+        Session session = sessionService.updateMeetingLink(id, principal.getId(), req.getMeeting_link());
+        return ResponseEntity.ok(Map.of("session", session));
+    }
+
     @GetMapping("/{id}/join")
     public ResponseEntity<Map<String, String>> joinSession(
         @AuthenticationPrincipal UserPrincipal principal,

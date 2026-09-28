@@ -145,6 +145,46 @@ public class SessionService {
         return saved;
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Session updateMeetingLink(UUID sessionId, UUID teacherId, String newMeetingLink) {
+        Session session = sessionRepository.findByIdForUpdate(sessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Session not found."));
+
+        if (!session.getTeacher().getId().equals(teacherId)) {
+            throw new ForbiddenException("Only the teacher can update the meeting link.");
+        }
+
+        if (newMeetingLink == null || newMeetingLink.isBlank()) {
+            throw new BadRequestException("Meeting link cannot be empty.");
+        }
+        if (!newMeetingLink.startsWith("http://") && !newMeetingLink.startsWith("https://")) {
+            throw new BadRequestException("Meeting link must be a valid URL starting with http:// or https://");
+        }
+
+        String provider = "CUSTOM";
+        if (newMeetingLink.contains("meet.jit.si")) {
+            provider = "JITSI";
+        } else if (newMeetingLink.contains("meet.google.com")) {
+            provider = "google_meet";
+        } else if (newMeetingLink.contains("zoom.us")) {
+            provider = "zoom";
+        }
+
+        session.setMeetingLink(newMeetingLink);
+        session.setMeetingProvider(provider);
+        // keep status unchanged
+        
+        Session saved = sessionRepository.save(session);
+
+        socketIOService.emitToUser(session.getLearner().getId(), "session_updated", Map.of(
+            "session", saved,
+            "message", session.getTeacher().getName() + " updated the meeting link.",
+            "action", "link_updated"
+        ));
+
+        return saved;
+    }
+
     public String joinSession(UUID sessionId, UUID userId) {
         Session session = sessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResourceNotFoundException("Session not found."));

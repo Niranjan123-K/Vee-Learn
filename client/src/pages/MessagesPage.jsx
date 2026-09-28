@@ -36,7 +36,6 @@ export default function MessagesPage() {
       try {
         setLoading(true);
         const res = await api.get('/sessions');
-<<<<<<< Updated upstream
         const chatSessions = (res.data.sessions || []).filter(s => 
           ['confirmed', 'completed'].includes(s.status)
         ).sort((a,b) => new Date(b.updated_at || b.updatedAt || b.created_at) - new Date(a.updated_at || a.updatedAt || a.created_at));
@@ -52,63 +51,6 @@ export default function MessagesPage() {
         }
 
         setSessions(deduplicated);
-=======
-
-        // Only allow connected sessions (confirmed or completed mentorships)
-        const connectedSessions = (res.data.sessions || []).filter(s =>
-          ['confirmed', 'completed'].includes(s.status)
-        );
-
-        // Sort newest first to preserve the latest session per partner
-        connectedSessions.sort((a, b) => {
-          const timeA = new Date(a.updated_at || a.updatedAt || a.created_at || a.scheduled_at).getTime();
-          const timeB = new Date(b.updated_at || b.updatedAt || b.created_at || b.scheduled_at).getTime();
-          return timeB - timeA;
-        });
-
-        const seenPartners = new Set();
-        const uniqueConversations = [];
-
-        for (const s of connectedSessions) {
-          const isTeacher = s.teacher_id === user?.id;
-          const partnerId = isTeacher ? s.learner_id : s.teacher_id;
-          const partnerName = (isTeacher ? s.learner_name : s.teacher_name) || 'Session Partner';
-          const partnerAvatar = isTeacher ? s.learner_avatar : s.teacher_avatar;
-
-          // Deduplicate by partnerId so each person appears only once
-          const uniqueKey = partnerId || partnerName;
-          if (!seenPartners.has(uniqueKey)) {
-            seenPartners.add(uniqueKey);
-            uniqueConversations.push({
-              id: s.id,
-              realSessionId: s.id,
-              partnerId: partnerId,
-              partnerName: partnerName,
-              partnerAvatar: partnerAvatar ? `http://localhost:5000${partnerAvatar}` : null,
-              skillName: s.skill_name || 'Collaborative Workspace',
-              roleBadge: isTeacher ? 'PEER LEARNER' : 'EXPERT MENTOR',
-              status: s.status === 'confirmed' ? 'online' : 'offline',
-              sessionStatus: s.status,
-              timeAgo: formatRelativeTime(s.updated_at || s.updatedAt || s.created_at || s.scheduled_at).toUpperCase(),
-              preview: s.status === 'confirmed' ? 'Active session workspace open.' : 'Session completed.',
-              meetingLink: s.meeting_link || null,
-              messages: [],
-              isReal: true
-            });
-          }
-        }
-
-        setConversations(uniqueConversations);
-
-        // Set initial active conversation
-        if (uniqueConversations.length > 0 && !activeId) {
-          let match = null;
-          if (sessionId || userId) {
-            match = uniqueConversations.find(c => c.id === sessionId || c.id === userId || c.partnerId === userId);
-          }
-          setActiveId(match ? match.id : uniqueConversations[0].id);
-        }
->>>>>>> Stashed changes
       } catch (err) {
         console.error('Failed to load connected conversations:', err);
       } finally {

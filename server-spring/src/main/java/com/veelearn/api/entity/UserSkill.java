@@ -36,12 +36,12 @@ public class UserSkill {
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "skill_type")
     private SkillType type;
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "proficiency_level")
     @Builder.Default
     private ProficiencyLevel proficiency = ProficiencyLevel.beginner;
 

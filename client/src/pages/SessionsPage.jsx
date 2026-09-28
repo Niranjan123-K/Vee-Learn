@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Video, Clock, MessageSquare, Check, X, Pencil, ArrowRight, Activity, AlertCircle, User, Search, Award } from 'lucide-react';
+import { Calendar, Video, Clock, MessageSquare, Check, X, Pencil, ArrowRight, Activity, AlertCircle, User, Search, Award, CheckCircle } from 'lucide-react';
 import api from '../utils/api';
 import useAuthStore from '../stores/authStore';
 import useChatStore from '../stores/chatStore';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
+import ReviewModal from '../components/ReviewModal';
 import { getInitials } from '../utils/formatters';
 import './SessionsPage.css';
 
@@ -52,6 +53,7 @@ const SessionTimeline = ({ session }) => {
 
 export default function SessionsPage() {
   const user = useAuthStore(state => state.user);
+  const fetchUser = useAuthStore(state => state.fetchUser);
   const navigate = useNavigate();
   const socket = useChatStore((s) => s.socket);
 
@@ -60,6 +62,10 @@ export default function SessionsPage() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [completingId, setCompletingId] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
 
   // Time tracker for real-time countdowns
   useEffect(() => {
@@ -85,6 +91,23 @@ export default function SessionsPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCompleteSession = async (session) => {
+    setCompletingId(session.id);
+    try {
+      const res = await api.put(`/sessions/${session.id}/complete`);
+      fetchSessions();
+      if (res.data.session.status === 'completed') {
+        setSelectedSession(res.data.session);
+        setShowReviewModal(true);
+      }
+    } catch (err) {
+      console.error('Failed to complete session:', err);
+      alert(err.response?.data?.error || 'Failed to complete session.');
+    } finally {
+      setCompletingId(null);
     }
   };
 
@@ -115,20 +138,38 @@ export default function SessionsPage() {
     }
   };
 
+  const handleUpdateMeetingLink = async (session) => {
+    const currentLink = session.meeting_link || '';
+    const newLink = window.prompt('Enter new meeting link (e.g. https://meet.jit.si/...):', currentLink);
+    if (newLink === null) return;
+    
+    const trimmed = newLink.trim();
+    if (!trimmed) {
+      alert('Meeting link cannot be empty.');
+      return;
+    }
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      alert('Meeting link must start with http:// or https://');
+      return;
+    }
+
+    try {
+      await api.put(`/sessions/${session.id}/meeting-link`, { meeting_link: trimmed });
+      await fetchSessions();
+      alert('Meeting link updated successfully.');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to update meeting link');
+    }
+  };
+
   const renderCountdown = (scheduledAtStr, durationMins = 60) => {
     const scheduledAt = new Date(scheduledAtStr);
     const endAt = new Date(scheduledAt.getTime() + durationMins * 60000);
     const diffMs = scheduledAt - currentTime;
-<<<<<<< Updated upstream
     
     if (diffMs <= 0) return <span style={{ fontWeight: 700 }}>In Progress</span>;
     
-=======
-
-    if (currentTime > endAt) return <span className="text-danger" style={{ fontWeight: 600 }}>Expired</span>;
-    if (diffMs <= 0) return <span className="text-success" style={{ fontWeight: 600 }}>In Progress</span>;
-
->>>>>>> Stashed changes
     const diffMins = Math.floor(diffMs / 60000);
     const hours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
@@ -158,13 +199,8 @@ export default function SessionsPage() {
 
   const filteredSessions = (activeTab === 'upcoming' ? upcomingSessions : pastSessions).filter(s => {
     const partnerName = s.teacher_id === user?.id ? s.learner_name : s.teacher_name;
-<<<<<<< Updated upstream
     return (partnerName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
            (s.skill_name || '').toLowerCase().includes(searchQuery.toLowerCase());
-=======
-    return partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.skill_name.toLowerCase().includes(searchQuery.toLowerCase());
->>>>>>> Stashed changes
   });
 
   return (
@@ -175,7 +211,6 @@ export default function SessionsPage() {
         description="View and coordinate your learning appointments, video classrooms, and session timeline."
       />
 
-<<<<<<< Updated upstream
       {/* Structured Filter & Search Strip */}
       <div className="sessions-filter-card">
         <div className="sessions-filter-pills">
@@ -202,38 +237,6 @@ export default function SessionsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-=======
-      <div className="card mb-xl">
-        <div className="card-body" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div className="tabs" style={{ borderBottom: 'none' }}>
-            <button
-              className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
-              onClick={() => setActiveTab('upcoming')}
-              style={{ padding: '4px 12px', fontSize: 'var(--font-xs)' }}
-            >
-              Upcoming ({upcomingSessions.length})
-            </button>
-            <button
-              className={`tab ${activeTab === 'past' ? 'active' : ''}`}
-              onClick={() => setActiveTab('past')}
-              style={{ padding: '4px 12px', fontSize: 'var(--font-xs)' }}
-            >
-              History ({pastSessions.length})
-            </button>
-          </div>
-
-          <div className="search-input-wrapper" style={{ width: '240px' }}>
-            <Search size={14} className="search-icon" style={{ left: '12px' }} />
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Search sessions..."
-              style={{ paddingLeft: '32px', fontSize: 'var(--font-xs)', padding: '6px 32px' }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
->>>>>>> Stashed changes
         </div>
       </div>
 
@@ -252,7 +255,6 @@ export default function SessionsPage() {
             const partnerAvatar = isTeacher ? session.learner_avatar : session.teacher_avatar;
             const isReady = isMeetingReady(session.scheduled_at);
             const isPassed = isMeetingPassed(session.scheduled_at, session.duration_minutes);
-<<<<<<< Updated upstream
             const costCredits = Math.ceil(session.duration_minutes / 60);
             
             return (
@@ -261,15 +263,6 @@ export default function SessionsPage() {
                 {/* 1. Header Tier: Who & What */}
                 <div className="session-card-header">
                   <div className="session-header-left">
-=======
-
-            return (
-              <div key={session.id} className="card session-card">
-
-                {/* 1. Participant */}
-                <div className="session-section participant-section">
-                  <div className="avatar-wrapper">
->>>>>>> Stashed changes
                     {partnerAvatar ? (
                       <img src={`http://localhost:5000${partnerAvatar}`} alt={partnerName} className="avatar avatar-lg" />
                     ) : (
@@ -288,7 +281,6 @@ export default function SessionsPage() {
                       </p>
                     </div>
                   </div>
-<<<<<<< Updated upstream
                   
                   <div className="session-header-right">
                     <div className="session-cost-badge">
@@ -334,7 +326,7 @@ export default function SessionsPage() {
                       <User size={15} /> View Profile
                     </button>
                     {isTeacher && session.meeting_link && (
-                      <button className="btn-ghost btn-sm" style={{ padding: '6px 12px' }} onClick={() => handleAction(session.id, 'confirm')}>
+                      <button className="btn-ghost btn-sm" style={{ padding: '6px 12px' }} onClick={() => handleUpdateMeetingLink(session)}>
                         <Pencil size={15} /> Edit Meeting Link
                       </button>
                     )}
@@ -359,6 +351,31 @@ export default function SessionsPage() {
                     
                     {session.status === 'confirmed' && (
                       <>
+                        {(() => {
+                          const userConfirmed = isTeacher ? session.teacher_completion_confirmed : session.learner_completion_confirmed;
+                          const otherUserConfirmed = isTeacher ? session.learner_completion_confirmed : session.teacher_completion_confirmed;
+
+                          if (!userConfirmed) {
+                            return (
+                              <button
+                                className="btn-success"
+                                style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+                                onClick={() => handleCompleteSession(session)}
+                                disabled={completingId === session.id}
+                              >
+                                <CheckCircle size={18} />
+                                {completingId === session.id ? 'Processing...' : otherUserConfirmed ? 'Confirm Completion' : 'Mark as Completed'}
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <span className="badge" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-primary)', padding: '10px 16px', borderRadius: '12px', fontSize: '13px' }}>
+                                Waiting for {getInitials(partnerName)}
+                              </span>
+                            );
+                          }
+                        })()}
+                        
                         <button className="btn-secondary" style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: 600 }} onClick={() => navigate(`/sessions/${session.id}/chat`)}>
                           <MessageSquare size={16} /> Open Workspace
                         </button>
@@ -379,7 +396,7 @@ export default function SessionsPage() {
                             <Video size={18} /> Join Meeting Room
                           </a>
                         ) : isTeacher ? (
-                          <button className="btn-action-join" onClick={() => handleAction(session.id, 'confirm')}>
+                          <button className="btn-action-join" onClick={() => handleUpdateMeetingLink(session)}>
                             <AlertCircle size={18} /> Add Meeting Link
                           </button>
                         ) : (
@@ -396,99 +413,6 @@ export default function SessionsPage() {
                       </button>
                     )}
                   </div>
-=======
-                  <div className="participant-info">
-                    <h3 className="session-skill truncate">{session.skill_name}</h3>
-                    <p className="session-partner truncate">with {partnerName}</p>
-                    <button
-                      className="btn-ghost btn-xs mt-sm"
-                      onClick={() => navigate(`/profile/${isTeacher ? session.learner_id : session.teacher_id}`)}
-                    >
-                      <User size={12} /> View Profile
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. Logistics */}
-                <div className="session-section logistics-section">
-                  <div className="logistics-row">
-                    <Calendar size={14} className="text-muted" />
-                    <span>{new Date(session.scheduled_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                  </div>
-                  <div className="logistics-row">
-                    <Clock size={14} className="text-muted" />
-                    <span>{new Date(session.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="logistics-row">
-                    <Activity size={14} className="text-muted" />
-                    <span>{session.duration_minutes} min</span>
-                  </div>
-                  <div className="logistics-row mt-sm">
-                    <span className="text-xs text-secondary uppercase font-semibold">Cost</span>
-                    <span className="text-warning font-semibold">{Math.ceil(session.duration_minutes / 60)} Credit{Math.ceil(session.duration_minutes / 60) > 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-
-                {/* 3. Status Timeline */}
-                <div className="session-section status-section">
-                  <div className="status-header">
-                    <span className="text-xs text-secondary uppercase font-semibold">Status Lifecycle</span>
-                    {['pending', 'confirmed'].includes(session.status) && (
-                      <span className="countdown-badge">{renderCountdown(session.scheduled_at, session.duration_minutes)}</span>
-                    )}
-                  </div>
-                  <SessionTimeline session={session} />
-                </div>
-
-                {/* 4. Actions */}
-                <div className="session-section actions-section">
-                  {['pending', 'confirmed'].includes(session.status) && isPassed ? (
-                    <div className="action-group" style={{ flexDirection: 'column', gap: '8px' }}>
-                      <p className="text-muted text-sm text-center">Session timeframe has passed.</p>
-                      <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
-                        <MessageSquare size={16} /> Open Workspace
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {session.status === 'pending' && isTeacher && (
-                        <button className="btn-success w-full" onClick={() => handleAction(session.id, 'confirm')}>
-                          <Check size={16} /> Confirm Request
-                        </button>
-                      )}
-
-                      {session.status === 'confirmed' && (
-                        <div className="action-group">
-                          <button
-                            className={`btn-primary w-full ${!isReady ? 'disabled' : ''}`}
-                            onClick={(e) => {
-                              if (!isReady) e.preventDefault();
-                              else handleJoin(session.id);
-                            }}
-                          >
-                            <Video size={16} /> {isReady ? 'Join Meeting' : 'Join available 15m before'}
-                          </button>
-
-                          <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
-                            <MessageSquare size={16} /> Open Workspace
-                          </button>
-                        </div>
-                      )}
-
-                      {['pending', 'confirmed'].includes(session.status) && (
-                        <button className="btn-ghost btn-xs cancel-btn" onClick={() => handleAction(session.id, 'cancel')}>
-                          <X size={14} /> Cancel Session
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {session.status === 'completed' && (
-                    <button className="btn-secondary w-full" onClick={() => navigate(`/messages/${session.id}`)}>
-                      View Workspace <ArrowRight size={14} />
-                    </button>
-                  )}
->>>>>>> Stashed changes
                 </div>
 
               </div>
@@ -503,6 +427,20 @@ export default function SessionsPage() {
           action={activeTab === 'upcoming' ? { label: 'Explore Teachers & Schedule Class', to: '/explore' } : undefined}
         />
       )}
+
+      <ReviewModal
+        isOpen={showReviewModal}
+        session={selectedSession}
+        onClose={() => setShowReviewModal(false)}
+        onSuccess={() => {
+          setShowReviewModal(false);
+          fetchSessions();
+        }}
+      />
     </div>
   );
 }
+
+
+
+

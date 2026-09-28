@@ -41,7 +41,7 @@ public class CreditTransaction {
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "transaction_type")
     private TransactionType type;
 
     @Column(columnDefinition = "TEXT")

@@ -24,10 +24,7 @@ export default function LedgerPage() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-<<<<<<< Updated upstream
         // Hitting the correct /credits/history endpoint instead of invalid 404 /ledger route
-=======
->>>>>>> Stashed changes
         const res = await api.get('/credits/history');
         setTransactions(res.data.transactions || []);
       } catch (err) {

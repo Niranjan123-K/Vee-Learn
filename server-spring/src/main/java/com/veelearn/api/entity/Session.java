@@ -9,6 +9,8 @@ import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "sessions")
@@ -25,10 +27,12 @@ public class Session {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "teacher_id")
+    @JsonIgnoreProperties({"skills", "googleIntegration"})
     private User teacher;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "learner_id")
+    @JsonIgnoreProperties({"skills", "googleIntegration"})
     private User learner;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
@@ -43,8 +47,8 @@ public class Session {
     private Integer durationMinutes = 60;
 
     @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)
-    @Column(nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "session_status")
     @Builder.Default
     private SessionStatus status = SessionStatus.pending;
 
@@ -90,4 +94,24 @@ public class Session {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @JsonProperty("teacher_id")
+    public UUID getTeacherId() {
+        return teacher != null ? teacher.getId() : null;
+    }
+
+    @JsonProperty("learner_id")
+    public UUID getLearnerId() {
+        return learner != null ? learner.getId() : null;
+    }
+
+    @JsonProperty("teacher_name")
+    public String getTeacherName() {
+        return teacher != null ? teacher.getName() : null;
+    }
+
+    @JsonProperty("learner_name")
+    public String getLearnerName() {
+        return learner != null ? learner.getName() : null;
+    }
 }

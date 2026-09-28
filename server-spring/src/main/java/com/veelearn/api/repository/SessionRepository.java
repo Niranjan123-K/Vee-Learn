@@ -90,19 +90,19 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
     """)
     Optional<Session> findByIdEnriched(@Param("id") UUID id);
 
-    @Query("""
-        SELECT COUNT(s) FROM Session s
-        WHERE (s.teacher.id = :userId OR s.learner.id = :userId)
-          AND s.status = com.veelearn.api.entity.enums.SessionStatus.completed
-    """)
+    @Query(value = """
+        SELECT COUNT(id) FROM sessions
+        WHERE (teacher_id = :userId OR learner_id = :userId)
+          AND status = 'completed'
+    """, nativeQuery = true)
     int countCompletedSessionsForUser(@Param("userId") UUID userId);
 
-    @Query("""
-        SELECT COUNT(s) FROM Session s
-        WHERE (s.teacher.id = :userId OR s.learner.id = :userId)
-          AND s.status IN (com.veelearn.api.entity.enums.SessionStatus.pending, com.veelearn.api.entity.enums.SessionStatus.confirmed)
-          AND s.scheduledAt > :now
-    """)
+    @Query(value = """
+        SELECT COUNT(id) FROM sessions
+        WHERE (teacher_id = :userId OR learner_id = :userId)
+          AND status IN ('pending', 'confirmed')
+          AND scheduled_at > :now
+    """, nativeQuery = true)
     int countUpcomingSessionsForUser(@Param("userId") UUID userId, @Param("now") OffsetDateTime now);
 
     @Query("""
